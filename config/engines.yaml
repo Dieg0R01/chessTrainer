@@ -1,0 +1,9 @@
+engines:
+  lichess:
+    method: GET
+    url: "https://lichess.org/api/cloud-eval"
+    params: {"fen": "{fen}", "depth": "{depth}"}
+    extract: "pvs[0].moves"
+  stockfish-local:
+    type: uci
+    command: "stockfish"
