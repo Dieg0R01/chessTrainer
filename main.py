@@ -1,0 +1,33 @@
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+from engine_manager import EngineManager
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+
+
+class MoveRequest(BaseModel):
+    engine: str
+    fen: str
+    depth: int
+
+
+app = FastAPI()
+
+engine_manager = EngineManager()
+
+# Montar los archivos estáticos del frontend
+app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")
+
+
+@app.get("/")
+async def read_root():
+    with open("static/index.html", "r") as f:
+        return HTMLResponse(content=f.read())
+
+
+@app.post("/move")
+async def get_best_move(move_request: MoveRequest):
+    engine = engine_manager.get_engine(move_request.engine)
+    best_move = await engine.get_best_move(move_request.fen, move_request.depth)
+    return {"bestmove": best_move}
