@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
@@ -6,85 +6,116 @@ import { Chessboard } from 'react-chessboard';
 function GamePage() {
   const location = useLocation();
   const { selectedEngineA, selectedEngineB } = location.state || {};
-  const chess = useRef(new Chess());
-  const [gamePosition, setGamePosition] = useState(chess.current.fen());
+  const gameRef = useRef(new Chess());
+  const [position, setPosition] = useState(gameRef.current.fen());
   const [status, setStatus] = useState("");
 
-  const updateStatus = useCallback(() => {
+  const updateStatus = () => {
+    const game = gameRef.current;
     let currentStatus = "";
-    let moveColor = chess.current.turn() === 'w' ? "Blancas" : "Negras";
+    let moveColor = game.turn() === 'w' ? "Blancas" : "Negras";
 
-    if (chess.current.in_checkmate()) {
+    if (game.isCheckmate()) {
       currentStatus = "Jaque mate! " + moveColor + " pierde.";
-    } else if (chess.current.in_draw()) {
+    } else if (game.isDraw()) {
       currentStatus = "Empate!";
     } else {
       currentStatus = moveColor + " para mover.";
-      if (chess.current.in_check()) {
+      if (game.isCheck()) {
         currentStatus += " " + moveColor + " está en jaque.";
       }
     }
     setStatus(currentStatus);
-  }, []);
+  };
 
-  const safeGameMutate = useCallback((modify) => {
-    setGamePosition((oldPosition) => {
-      const newGame = new Chess(oldPosition);
-      modify(newGame);
-      return newGame.fen();
-    });
-  }, []);
-
-  const onDrop = useCallback((sourceSquare, targetSquare) => {
-    let move = null;
-    safeGameMutate((game) => {
-      move = game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-    });
-    // illegal move
-    if (move === null) return false;
-
+  useEffect(() => {
+    console.log("GamePage montado.");
+    console.log("Motor A seleccionado:", selectedEngineA);
+    console.log("Motor B seleccionado:", selectedEngineB);
     updateStatus();
-
-    // Si es humano vs motor, envía la jugada al backend
-    if (selectedEngineA === 'human' && selectedEngineB !== 'none') {
-      makeEngineMove(selectedEngineB);
-    } else if (selectedEngineA !== 'human' && selectedEngineB === 'none') {
-      // Si el jugador humano está jugando contra el motor A
-      makeEngineMove(selectedEngineA);
-    } else if (selectedEngineA !== 'human' && selectedEngineB !== 'none') {
-      // Motor vs Motor
-      console.log("Partida Motor vs Motor");
-    }
-
-    return true;
-  }, [selectedEngineA, selectedEngineB, updateStatus, safeGameMutate]);
+  }, []);
 
   const makeEngineMove = async (engineName) => {
     try {
+      const game = gameRef.current;
       const response = await fetch('http://localhost:8000/move', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ engine: engineName, fen: chess.current.fen(), depth: 10 }),
+        body: JSON.stringify({ engine: engineName, fen: game.fen(), depth: 10 }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Error desconocido' }));
+        console.error("❌ Error del servidor:", errorData);
+        setStatus(`Error: ${engineName} - ${errorData.detail || 'No se pudo obtener el movimiento'}`);
+        return;
+      }
+      
       const data = await response.json();
       const bestMove = data.bestmove;
 
       if (bestMove) {
-        safeGameMutate((game) => {
+        try {
           game.move(bestMove);
-        });
-        updateStatus();
+          setPosition(game.fen());
+          updateStatus();
+        } catch (error) {
+          console.error("Error al aplicar movimiento del motor:", error);
+          setStatus(`Error: No se pudo aplicar el movimiento ${bestMove}`);
+        }
       }
     } catch (error) {
       console.error("Error al obtener movimiento del motor:", error);
+      setStatus(`Error: No se pudo conectar con el motor ${engineName}. La posición puede no estar en la base de datos de Lichess.`);
     }
   };
 
-  useEffect(() => {
-    updateStatus();
-  }, [gamePosition, updateStatus]);
+  function onPieceDrop(sourceSquare, targetSquare) {
+    console.log("🎯 onPieceDrop llamado:", sourceSquare, "->", targetSquare);
+    
+    try {
+      const game = gameRef.current;
+      const move = game.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q'
+      });
+
+      console.log("📋 Resultado del movimiento:", move);
+
+      // Movimiento ilegal
+      if (move === null) {
+        console.log("❌ Movimiento ILEGAL");
+        return false;
+      }
+
+      console.log("✅ Movimiento VÁLIDO - Actualizando estado");
+      setPosition(game.fen());
+      
+      // Actualizar status después de un breve delay
+      setTimeout(() => {
+        updateStatus();
+        
+        // Si es humano vs motor, hacer que el motor juegue
+        if (selectedEngineA === 'human' && selectedEngineB !== 'none') {
+          console.log("🤖 Solicitando movimiento del motor:", selectedEngineB);
+          makeEngineMove(selectedEngineB);
+        } else if (selectedEngineA !== 'human' && selectedEngineB === 'none') {
+          console.log("🤖 Solicitando movimiento del motor:", selectedEngineA);
+          makeEngineMove(selectedEngineA);
+        }
+      }, 50);
+
+      return true;
+    } catch (error) {
+      console.error("❌ Error en onPieceDrop:", error);
+      return false;
+    }
+  }
+
+  console.log("🔄 Renderizando GamePage, FEN:", position);
 
   return (
     <div>
@@ -93,10 +124,11 @@ function GamePage() {
         <p>Motor A: {selectedEngineA || "Humano"}</p>
         <p>Motor B: {selectedEngineB === "none" ? "Humano" : selectedEngineB}</p>
       </div>
-      <div style={{ width: '500px' }}>
+      <div style={{ width: '500px', margin: '20px auto' }}>
         <Chessboard
-          position={gamePosition}
-          onPieceDrop={onDrop}
+          position={position}
+          onPieceDrop={onPieceDrop}
+          boardWidth={500}
         />
       </div>
       <p>Status: {status}</p>

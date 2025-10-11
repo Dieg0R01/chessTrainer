@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama de Clases - Engine Manager (Mermaid)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .diagram-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .diagram-title {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .mermaid {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .legend-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .legend-item h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .legend-item p {
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .code-section {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .code-section pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .info-box h4 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+        
+        .relations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .relation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        
+        .relation-card strong {
+            display: block;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📐 Diagrama de Clases UML</h1>
+            <p>Engine Manager - Chess Trainer Project</p>
+        </div>
+        
+        <div class="content">
+            <div class="diagram-section">
+                <h2 class="diagram-title">Diagrama de Clases Completo</h2>
+                
+                <div class="mermaid">
+classDiagram
+    class EngineInterface {
+        &lt;&lt;abstract&gt;&gt;
+        +get_best_move(fen, depth)* str
+    }
+    
+    class UciEngineAdapter {
+        -command str
+        -process Process
+        +__init__(config)
+        -_start_engine()
+        -_write_command(command)
+        -_read_until(expected)
+        +get_best_move(fen, depth) str
+    }
+    
+    class RestEngineAdapter {
+        -method str
+        -url str
+        -params_template dict
+        -extract_path str
+        +__init__(config)
+        +get_best_move(fen, depth) str
+    }
+    
+    class EngineManager {
+        -engines dict
+        +__init__(config_path)
+        +load_config(path)
+        +get_engine(name) EngineInterface
+    }
+    
+    EngineInterface &lt;|-- UciEngineAdapter
+    EngineInterface &lt;|-- RestEngineAdapter
+    EngineManager o-- EngineInterface
+    
+    note for EngineInterface "Interfaz abstracta (ABC)&#10;Define el contrato para&#10;todos los motores"
+    note for UciEngineAdapter "Adaptador para motores UCI&#10;(Stockfish, Komodo, etc)&#10;Comunicación stdin/stdout"
+    note for RestEngineAdapter "Adaptador para APIs REST&#10;(Lichess, Chess.com)&#10;Comunicación HTTP/HTTPS"
+    note for EngineManager "Factory Pattern&#10;Carga motores desde YAML&#10;Gestiona ciclo de vida"
+                </div>
+                
+                <div class="info-box">
+                    <h4>💡 Sobre este Diagrama</h4>
+                    <p>Este diagrama UML muestra la estructura de clases del Engine Manager, incluyendo atributos, métodos y relaciones entre componentes. Usa la sintaxis de Mermaid para generar diagramas como código.</p>
+                </div>
+            </div>
+            
+            <div class="diagram-section">
+                <h2 class="diagram-title">Relaciones entre Clases</h2>
+                
+                <div class="relations">
+                    <div class="relation-card">
+                        <strong>Herencia</strong>
+                        <p>UciEngineAdapter → EngineInterface</p>
+                        <p>RestEngineAdapter → EngineInterface</p>
+                    </div>
+                    <div class="relation-card">
+                        <strong>Composición</strong>
+                        <p>EngineManager ◆→ EngineInterface</p>
+                        <p>(gestiona múltiples motores)</p>
+                    </div>
+                    <div class="relation-card">
+                        <strong>Dependencia</strong>
+                        <p>Todas las clases dependen de la abstracción EngineInterface</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="diagram-section">
+                <h2 class="diagram-title">Detalles de Implementación</h2>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <h3>🔷 EngineInterface</h3>
+                        <p><strong>Tipo:</strong> Clase Abstracta (ABC)</p>
+                        <p><strong>Responsabilidad:</strong> Define el contrato que todos los motores deben cumplir</p>
+                        <p><strong>Métodos:</strong></p>
+                        <ul>
+                            <li><code>get_best_move()</code>: Método abstracto que debe ser implementado</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="legend-item">
+                        <h3>🔷 UciEngineAdapter</h3>
+                        <p><strong>Tipo:</strong> Clase Concreta</p>
+                        <p><strong>Responsabilidad:</strong> Adapta motores UCI (protocolo estándar)</p>
+                        <p><strong>Atributos Privados:</strong></p>
+                        <ul>
+                            <li><code>command</code>: Comando para ejecutar el motor</li>
+                            <li><code>process</code>: Proceso asyncio del motor</li>
+                        </ul>
+                        <p><strong>Métodos Privados:</strong></p>
+                        <ul>
+                            <li><code>_start_engine()</code>: Inicia el motor</li>
+                            <li><code>_write_command()</code>: Envía comandos</li>
+                            <li><code>_read_until()</code>: Lee respuestas</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="legend-item">
+                        <h3>🔷 RestEngineAdapter</h3>
+                        <p><strong>Tipo:</strong> Clase Concreta</p>
+                        <p><strong>Responsabilidad:</strong> Adapta APIs REST de ajedrez</p>
+                        <p><strong>Atributos Privados:</strong></p>
+                        <ul>
+                            <li><code>method</code>: Método HTTP (GET/POST)</li>
+                            <li><code>url</code>: URL del endpoint</li>
+                            <li><code>params_template</code>: Plantilla de parámetros</li>
+                            <li><code>extract_path</code>: JSONPath para extraer datos</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="legend-item">
+                        <h3>🔷 EngineManager</h3>
+                        <p><strong>Tipo:</strong> Clase Concreta (Factory)</p>
+                        <p><strong>Responsabilidad:</strong> Gestiona y crea motores</p>
+                        <p><strong>Atributos Privados:</strong></p>
+                        <ul>
+                            <li><code>engines</code>: Diccionario de motores disponibles</li>
+                        </ul>
+                        <p><strong>Métodos Públicos:</strong></p>
+                        <ul>
+                            <li><code>load_config()</code>: Carga configuración YAML</li>
+                            <li><code>get_engine()</code>: Retorna motor por nombre</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="diagram-section">
+                <h2 class="diagram-title">Código Mermaid (Sintaxis)</h2>
+                
+                <div class="code-section">
+<pre>classDiagram
+    class EngineInterface {
+        &lt;&lt;abstract&gt;&gt;
+        +get_best_move(fen, depth)* str
+    }
+    
+    class UciEngineAdapter {
+        -command str
+        -process Process
+        +__init__(config)
+        -_start_engine()
+        -_write_command(command)
+        -_read_until(expected)
+        +get_best_move(fen, depth) str
+    }
+    
+    class RestEngineAdapter {
+        -method str
+        -url str
+        -params_template dict
+        -extract_path str
+        +__init__(config)
+        +get_best_move(fen, depth) str
+    }
+    
+    class EngineManager {
+        -engines dict
+        +__init__(config_path)
+        +load_config(path)
+        +get_engine(name) EngineInterface
+    }
+    
+    EngineInterface &lt;|-- UciEngineAdapter
+    EngineInterface &lt;|-- RestEngineAdapter
+    EngineManager o-- EngineInterface</pre>
+                </div>
+                
+                <div class="info-box">
+                    <h4>📝 Leyenda de Símbolos UML</h4>
+                    <ul style="list-style: none; padding: 10px;">
+                        <li><strong>+</strong> = Público (accesible desde fuera)</li>
+                        <li><strong>-</strong> = Privado (solo accesible internamente)</li>
+                        <li><strong>*</strong> = Método abstracto (debe ser implementado)</li>
+                        <li><strong>&lt;|--</strong> = Herencia (implements)</li>
+                        <li><strong>o--</strong> = Composición (manages/contains)</li>
+                        <li><strong>~</strong> = Genéricos (dict~str, int~)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="diagram-section">
+                <h2 class="diagram-title">Patrones de Diseño Identificados</h2>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <h3>🔌 Adapter Pattern</h3>
+                        <p>Los adaptadores (UciEngineAdapter, RestEngineAdapter) convierten interfaces incompatibles en una interfaz común (EngineInterface)</p>
+                    </div>
+                    
+                    <div class="legend-item">
+                        <h3>🎯 Strategy Pattern</h3>
+                        <p>Los diferentes adaptadores son estrategias intercambiables que implementan el mismo comportamiento (get_best_move)</p>
+                    </div>
+                    
+                    <div class="legend-item">
+                        <h3>🏭 Factory Pattern</h3>
+                        <p>EngineManager actúa como fábrica, creando instancias de adaptadores basándose en configuración</p>
+                    </div>
+                    
+                    <div class="legend-item">
+                        <h3>🔄 Dependency Inversion</h3>
+                        <p>El código depende de la abstracción (EngineInterface), no de implementaciones concretas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Generado con <strong>Mermaid.js</strong> | Chess Trainer Project | Octubre 2025</p>
+            <p>Para editar: <a href="https://mermaid.live" target="_blank">https://mermaid.live</a></p>
+        </div>
+    </div>
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#e3f2fd',
+                primaryTextColor: '#000000',
+                primaryBorderColor: '#667eea',
+                lineColor: '#667eea',
+                secondaryColor: '#f0f4ff',
+                secondaryTextColor: '#000000',
+                tertiaryColor: '#ffffff',
+                tertiaryTextColor: '#000000',
+                noteBkgColor: '#fff9e6',
+                noteTextColor: '#000000',
+                noteBorderColor: '#ffcc00',
+                textColor: '#000000',
+                mainBkg: '#ffffff',
+                secondBkg: '#e3f2fd',
+                border1: '#667eea',
+                border2: '#764ba2',
+                fontSize: '16px',
+                fontFamily: 'Segoe UI, Arial, sans-serif'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            classDiagram: {
+                diagramPadding: 20,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>
+
