@@ -1,5 +1,5 @@
-fastapi==0.103.2
-uvicorn==0.23.2
-PyYAML==6.0.1
-httpx==0.24.1
-jsonpath==0.82.2
+fastapi>=0.115.0
+uvicorn>=0.32.0
+PyYAML>=6.0.2
+httpx>=0.27.0
+jsonpath>=0.82.2

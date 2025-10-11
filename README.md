@@ -82,37 +82,38 @@ engines:
 -   **`frontend/src/SelectionPage.jsx` (Frontend)**: (Refactorizado de `App.jsx`) Un componente que permite a los usuarios seleccionar los motores de ajedrez para la partida y navegar a la `GamePage` con las opciones seleccionadas.
 -   **`Dockerfile`**: Define cómo construir la imagen Docker de la aplicación, incluyendo la construcción del frontend, la instalación de dependencias del backend y la configuración del servidor Uvicorn para servir tanto los archivos estáticos del frontend como la API de FastAPI.
 
-## Cómo Iniciar el Proyecto (Desarrollo Local)
+## 🚀 Cómo Iniciar el Proyecto
 
-1.  **Backend (Python)**:
-    -   Asegúrate de tener Miniconda/Anaconda instalado.
-    -   Crea y activa el ambiente conda:
-        ```bash
-        conda create -n chess python=3.10 --yes
-        conda activate chess
-        ```
-    -   Instala las dependencias de Python:
-        ```bash
-        pip install -r requirements.txt
-        ```
-    -   Inicia el servidor FastAPI (en segundo plano):
-        ```bash
-        uvicorn main:app --host 0.0.0.0 --port 8000 &
-        ```
+### Inicio Rápido
 
-2.  **Frontend (React)**:
-    -   Navega a la carpeta `frontend`:
-        ```bash
-        cd frontend
-        ```
-    -   Instala las dependencias de Node.js:
-        ```bash
-        npm install
-        ```
-    -   Inicia el servidor de desarrollo de React:
-        ```bash
-        npm run dev
-        ```
-    -   La aplicación estará disponible en `http://localhost:5173/` (o un puerto similar si el 5173 ya está en uso).
+```bash
+# Dar permisos de ejecución (solo la primera vez)
+chmod +x start.sh stop.sh
 
-Ahora, puedes abrir tu navegador y acceder a la URL del frontend para empezar a usar la aplicación.
+# Iniciar la aplicación
+./start.sh
+
+# Detener la aplicación
+./stop.sh
+```
+
+La aplicación estará disponible en **http://localhost:5173**
+
+### 📖 Documentación Completa
+
+Para instrucciones detalladas de despliegue, configuración de motores, y solución de problemas, consulta:
+
+**👉 [DESPLIEGUE.md](DESPLIEGUE.md)**
+
+### Versiones Utilizadas
+
+- **chess.js**: 1.4.0 (versión estable más reciente)
+- **Python**: 3.10+
+- **Node.js**: 18+
+- **FastAPI**: 0.115.0+
+- **React**: 19.1+
+
+### Motores Disponibles
+
+- **Lichess Cloud**: Motor online (solo posiciones populares)
+- **Stockfish Local**: Motor UCI local (requiere instalación)

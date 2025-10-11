@@ -65,21 +65,37 @@ class RestEngineAdapter(EngineInterface):
         self.extract_path = config["extract"]
 
     async def get_best_move(self, fen: str, depth: int) -> str:
-        params = {k: v.format(fen=fen, depth=depth) for k, v in self.params_template.items()}
-        async with httpx.AsyncClient() as client:
+        # Formatear los parámetros
+        formatted_params = {}
+        for k, v in self.params_template.items():
+            formatted_value = v.format(fen=fen, depth=depth)
+            formatted_params[k] = formatted_value
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
             if self.method.upper() == "GET":
-                response = await client.get(self.url, params=params)
+                # Para Lichess, construir la URL manualmente para evitar problemas de codificación
+                response = await client.get(self.url, params=formatted_params)
             elif self.method.upper() == "POST":
-                response = await client.post(self.url, json=params)
+                response = await client.post(self.url, json=formatted_params)
             else:
                 raise ValueError(f"Método HTTP no soportado: {self.method}")
+            # Manejar respuestas de error específicas de la API
+            if response.status_code == 404:
+                data = response.json()
+                error_msg = data.get('error', 'Recurso no encontrado')
+                raise ValueError(f"API Error: {error_msg}. La posición no está en la base de datos de Lichess cloud.")
+            
             response.raise_for_status()
             data = response.json()
             
             # Extracción del mejor movimiento usando jsonpath
             result = jsonpath(data, self.extract_path)
             if result:
-                return result[0]
+                # Si el resultado es una cadena de movimientos (ej: "e2e4 e7e5"), tomar solo el primero
+                moves_string = result[0]
+                if isinstance(moves_string, str) and ' ' in moves_string:
+                    return moves_string.split()[0]
+                return moves_string
             else:
                 raise ValueError(f"No se pudo extraer el mejor movimiento de la respuesta con '{self.extract_path}': {data}")
 
