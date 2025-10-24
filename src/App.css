@@ -1,0 +1,509 @@
+.retro-container {
+  width: 90vw;
+  max-width: 1400px;
+  height: 90vh;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 40, 0, 0.9),
+    rgba(0, 20, 0, 0.95)
+  );
+  border: 3px solid var(--retro-green);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 
+    0 0 20px var(--retro-glow),
+    inset 0 0 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Header */
+.terminal-header {
+  text-align: center;
+  padding: 10px 0;
+  border-bottom: 2px solid var(--retro-border);
+}
+
+.terminal-title {
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.main-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 24px;
+  margin: 10px 0;
+  letter-spacing: 3px;
+}
+
+/* Content wrapper */
+.content-wrapper {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(400px, 2fr) minmax(220px, 1fr);
+  gap: 20px;
+  padding: 10px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Panels */
+.system-panel,
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panel-border {
+  border: 2px solid var(--retro-border);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px;
+  flex: 1;
+  box-shadow: 
+    inset 0 0 10px rgba(51, 255, 51, 0.1),
+    0 0 10px rgba(51, 255, 51, 0.1);
+}
+
+.panel-content {
+  border: 1px solid var(--retro-green);
+  padding: 15px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-line {
+  font-size: 18px;
+  margin: 8px 0;
+  letter-spacing: 1px;
+}
+
+/* Chess board */
+.board-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.board-frame {
+  position: relative;
+  width: min(100%, calc(90vh - 250px));
+  aspect-ratio: 1 / 1;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 3px solid var(--retro-green);
+  box-sizing: border-box;
+  box-shadow: 
+    0 0 20px var(--retro-glow),
+    inset 0 0 20px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.board-inner {
+  border: 2px solid var(--retro-border);
+  padding: 5px;
+  background: var(--retro-dark-green);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-label {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 16px;
+  letter-spacing: 3px;
+}
+
+/* Control panel */
+.retro-button {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  padding: 15px 20px;
+  background: var(--retro-dark-green);
+  color: var(--retro-green);
+  border: 3px solid var(--retro-green);
+  cursor: pointer;
+  transition: all 0.1s;
+  letter-spacing: 2px;
+  width: 100%;
+}
+
+.retro-button:hover {
+  background: var(--retro-green);
+  color: var(--retro-dark-green);
+  box-shadow: 0 0 15px var(--retro-glow);
+  transform: scale(1.05);
+}
+
+.retro-button:active {
+  transform: scale(0.95);
+}
+
+.retro-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.retro-button:disabled:hover {
+  background: var(--retro-dark-green);
+  color: var(--retro-green);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Selection styles */
+.selection-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+.retro-select {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  padding: 10px;
+  background: var(--retro-dark-green);
+  color: var(--retro-green);
+  border: 2px solid var(--retro-green);
+  border-radius: 0;
+  letter-spacing: 1px;
+}
+
+.retro-select:focus {
+  outline: none;
+  box-shadow: 0 0 10px var(--retro-glow);
+}
+
+.retro-select option {
+  background: var(--retro-dark-green);
+  color: var(--retro-green);
+}
+
+/* Move history */
+.move-history {
+  flex: 1;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-title {
+  font-size: 16px;
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+
+.history-content {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--retro-border);
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+}
+
+.history-item {
+  margin: 5px 0;
+  padding: 3px 5px;
+  border-left: 2px solid var(--retro-border);
+  padding-left: 10px;
+}
+
+/* Scrollbar retro style */
+.history-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.history-content::-webkit-scrollbar-track {
+  background: var(--retro-dark-green);
+}
+
+.history-content::-webkit-scrollbar-thumb {
+  background: var(--retro-green);
+  border: 1px solid var(--retro-dark-green);
+}
+
+/* Footer */
+.terminal-footer {
+  text-align: center;
+  padding: 10px 0;
+  border-top: 2px solid var(--retro-border);
+}
+
+.footer-text {
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+/* Responsive design */
+
+/* Desktop grande - ajustes sutiles */
+@media (max-width: 1400px) {
+  .content-wrapper {
+    grid-template-columns: minmax(200px, 1fr) minmax(350px, 2fr) minmax(200px, 1fr);
+    gap: 15px;
+  }
+}
+
+/* Desktop mediano - paneles más pequeños */
+@media (max-width: 1200px) {
+  .content-wrapper {
+    grid-template-columns: minmax(180px, 1fr) minmax(300px, 2fr) minmax(180px, 1fr);
+    gap: 15px;
+  }
+  
+  .main-title {
+    font-size: 20px;
+  }
+  
+  .retro-button {
+    font-size: 12px;
+    padding: 12px 15px;
+  }
+  
+  .status-line {
+    font-size: 16px;
+  }
+}
+
+/* Laptop pequeño - más compacto */
+@media (max-width: 1024px) {
+  .content-wrapper {
+    grid-template-columns: minmax(160px, 1fr) minmax(280px, 2fr) minmax(160px, 1fr);
+    gap: 12px;
+  }
+  
+  .main-title {
+    font-size: 18px;
+  }
+  
+  .retro-button {
+    font-size: 11px;
+    padding: 10px 12px;
+    letter-spacing: 1px;
+  }
+  
+  .terminal-title {
+    font-size: 12px;
+  }
+  
+  .panel-content {
+    padding: 12px;
+  }
+}
+
+/* Tablets - cambio a layout vertical */
+@media (max-width: 768px) {
+  .content-wrapper {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(120px, 20vh) 1fr minmax(140px, 25vh);
+    gap: 12px;
+  }
+  
+  .system-panel,
+  .control-panel {
+    min-height: 0;
+    overflow: hidden;
+  }
+  
+  .panel-border {
+    overflow-y: auto;
+    height: 100%;
+  }
+  
+  .panel-content {
+    height: 100%;
+    overflow-y: auto;
+  }
+  
+  .board-container {
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .board-frame {
+    width: auto;
+    height: min(95%, 100%);
+    max-height: 100%;
+    aspect-ratio: 1 / 1;
+    padding: 12px;
+  }
+  
+  .retro-container {
+    width: 95vw;
+    height: 95vh;
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .main-title {
+    font-size: 18px;
+  }
+  
+  .terminal-title {
+    font-size: 11px;
+  }
+  
+  .status-line {
+    font-size: 15px;
+    margin: 6px 0;
+  }
+  
+  .retro-button {
+    font-size: 10px;
+    padding: 10px 12px;
+  }
+  
+  .board-label {
+    font-size: 14px;
+  }
+  
+  .move-history {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  
+  .history-content {
+    overflow-y: auto;
+    max-height: 100%;
+  }
+}
+
+/* Móviles grandes */
+@media (max-width: 600px) {
+  .content-wrapper {
+    grid-template-rows: minmax(100px, 18vh) 1fr minmax(120px, 22vh);
+  }
+  
+  .board-frame {
+    width: auto;
+    height: min(92%, 100%);
+    max-height: 100%;
+    padding: 10px;
+  }
+  
+  .retro-container {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .main-title {
+    font-size: 16px;
+  }
+  
+  .terminal-title {
+    font-size: 10px;
+  }
+  
+  .status-line {
+    font-size: 14px;
+    margin: 5px 0;
+  }
+  
+  .retro-button {
+    font-size: 10px;
+    padding: 9px 11px;
+  }
+  
+  .panel-content {
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .history-title {
+    font-size: 14px;
+  }
+  
+  .history-content {
+    font-size: 14px;
+  }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+  .content-wrapper {
+    grid-template-rows: minmax(90px, 16vh) 1fr minmax(110px, 20vh);
+    gap: 8px;
+  }
+  
+  .board-frame {
+    width: auto;
+    height: min(90%, 100%);
+    max-height: 100%;
+    padding: 8px;
+  }
+  
+  .board-inner {
+    padding: 4px;
+  }
+  
+  .retro-container {
+    width: 98vw;
+    height: 98vh;
+    padding: 8px;
+    gap: 8px;
+  }
+  
+  .main-title {
+    font-size: 14px;
+  }
+  
+  .terminal-title {
+    font-size: 9px;
+  }
+  
+  .status-line {
+    font-size: 13px;
+    margin: 4px 0;
+  }
+  
+  .retro-button {
+    font-size: 9px;
+    padding: 8px 10px;
+    letter-spacing: 0.5px;
+  }
+  
+  .board-label {
+    font-size: 12px;
+    margin-top: 6px;
+  }
+  
+  .panel-content {
+    padding: 8px;
+    gap: 6px;
+  }
+  
+  .history-title {
+    font-size: 12px;
+  }
+  
+  .history-content {
+    font-size: 12px;
+  }
+}
