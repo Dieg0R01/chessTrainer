@@ -34,6 +34,10 @@ if os.path.exists("frontend/dist"):
 
 @app.get("/")
 async def read_root():
+    # Si existe frontend/dist, servir el HTML de producción
+    if os.path.exists("frontend/dist/index.html"):
+        with open("frontend/dist/index.html", "r") as f:
+            return HTMLResponse(content=f.read())
     # En desarrollo, redirigir al servidor de Vite
     html_content = """
     <!DOCTYPE html>
@@ -47,6 +51,19 @@ async def read_root():
     </html>
     """
     return HTMLResponse(content=html_content)
+
+
+@app.get("/api")
+async def api_info():
+    """Información de la API"""
+    return {
+        "message": "Chess Trainer API",
+        "version": "1.0.0",
+        "endpoints": {
+            "GET /engines": "Lista de motores disponibles",
+            "POST /move": "Obtener mejor movimiento de un motor"
+        }
+    }
 
 
 @app.get("/engines")
