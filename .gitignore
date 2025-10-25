@@ -7,10 +7,23 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node modules (works for both root and frontend/)
 node_modules
 dist
 dist-ssr
 *.local
+
+# Python cache (for backend)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Editor directories and files
 .vscode/*
