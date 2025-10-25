@@ -50,7 +50,7 @@ function GamePage() {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'Error desconocido' }));
-        console.error("❌ Error del servidor:", errorData);
+        console.error("Error del servidor:", errorData);
         setStatus(`Error: ${engineName} - ${errorData.detail || 'No se pudo obtener el movimiento'}`);
         return;
       }
@@ -75,7 +75,7 @@ function GamePage() {
   };
 
   function onPieceDrop(sourceSquare, targetSquare) {
-    console.log("🎯 onPieceDrop llamado:", sourceSquare, "->", targetSquare);
+    console.log("onPieceDrop llamado:", sourceSquare, "->", targetSquare);
     
     try {
       const game = gameRef.current;
@@ -85,15 +85,8 @@ function GamePage() {
         promotion: 'q'
       });
 
-      console.log("📋 Resultado del movimiento:", move);
-
-      // Movimiento ilegal
-      if (move === null) {
-        console.log("❌ Movimiento ILEGAL");
-        return false;
-      }
-
-      console.log("✅ Movimiento VÁLIDO - Actualizando estado");
+      console.log("Resultado del movimiento:", move);
+      console.log("Movimiento VÁLIDO - Actualizando estado");
       setPosition(game.fen());
       
       // Actualizar status después de un breve delay
@@ -102,38 +95,108 @@ function GamePage() {
         
         // Si es humano vs motor, hacer que el motor juegue
         if (selectedEngineA === 'human' && selectedEngineB !== 'none') {
-          console.log("🤖 Solicitando movimiento del motor:", selectedEngineB);
+          console.log("Solicitando movimiento del motor:", selectedEngineB);
           makeEngineMove(selectedEngineB);
         } else if (selectedEngineA !== 'human' && selectedEngineB === 'none') {
-          console.log("🤖 Solicitando movimiento del motor:", selectedEngineA);
+          console.log("Solicitando movimiento del motor:", selectedEngineA);
           makeEngineMove(selectedEngineA);
         }
       }, 50);
 
       return true;
     } catch (error) {
-      console.error("❌ Error en onPieceDrop:", error);
+      // En chess.js v1.4.0, los movimientos ilegales lanzan excepciones
+      console.log("Movimiento ILEGAL:", error.message);
       return false;
     }
   }
 
-  console.log("🔄 Renderizando GamePage, FEN:", position);
+  console.log("Renderizando GamePage, FEN:", position);
 
   return (
-    <div>
-      <h1>Partida de Ajedrez</h1>
-      <div>
-        <p>Motor A: {selectedEngineA || "Humano"}</p>
-        <p>Motor B: {selectedEngineB === "none" ? "Humano" : selectedEngineB}</p>
+    <div className="retro-container">
+      {/* Terminal header */}
+      <div className="terminal-header">
+        <div className="terminal-title glow">
+          ═══════════════════════════════════════
+        </div>
+        <h1 className="main-title glow">CHESS TRAINER TERMINAL v2.0</h1>
+        <div className="terminal-title glow">
+          ═══════════════════════════════════════
+        </div>
       </div>
-      <div style={{ width: '500px', margin: '20px auto' }}>
-        <Chessboard
-          position={position}
-          onPieceDrop={onPieceDrop}
-          boardWidth={500}
-        />
+
+      {/* Main content area */}
+      <div className="content-wrapper">
+        {/* System info panel */}
+        <div className="system-panel">
+          <div className="panel-border">
+            <div className="panel-content">
+              <div className="status-line">
+                <span className="blink">&gt;</span> SYSTEM STATUS: ONLINE
+              </div>
+              <div className="status-line">
+                <span className="blink">&gt;</span> GAME: IN PROGRESS
+              </div>
+              <div className="status-line">
+                <span className="blink">&gt;</span> ENGINE A: {selectedEngineA || "HUMANO"}
+              </div>
+              <div className="status-line">
+                <span className="blink">&gt;</span> ENGINE B: {selectedEngineB === "none" ? "HUMANO" : selectedEngineB}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Chess board container */}
+        <div className="board-container">
+          <div className="board-frame">
+            <div className="board-inner">
+              <Chessboard
+                position={position}
+                onPieceDrop={onPieceDrop}
+                customBoardStyle={{
+                  borderRadius: '0px',
+                  boxShadow: 'none'
+                }}
+                customLightSquareStyle={{
+                  backgroundColor: '#1a5c1a'
+                }}
+                customDarkSquareStyle={{
+                  backgroundColor: '#0a3d0a'
+                }}
+              />
+            </div>
+            <div className="board-label glow">CHESS.SYS v2.1</div>
+          </div>
+        </div>
+
+        {/* Control panel */}
+        <div className="control-panel">
+          <div className="panel-border">
+            <div className="panel-content">
+              <button className="retro-button glow" onClick={() => window.location.href = '/'}>
+                [ VOLVER A SELECCIÓN ]
+              </button>
+              <div className="move-history">
+                <div className="history-title glow">▼ GAME STATUS:</div>
+                <div className="history-content">
+                  <div className="history-item">
+                    {status || "Cargando estado del juego..."}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <p>Status: {status}</p>
+
+      {/* Terminal footer */}
+      <div className="terminal-footer">
+        <div className="footer-text glow">
+          <span className="blink">█</span> READY FOR INPUT...
+        </div>
+      </div>
     </div>
   );
 }
