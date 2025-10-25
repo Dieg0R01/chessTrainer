@@ -154,3 +154,4 @@ Asegúrate de que estos puertos estén disponibles antes de iniciar.
 - Los logs del backend aparecen en la terminal donde se ejecuta uvicorn
 - Los logs del frontend aparecen en la consola del navegador
 
+

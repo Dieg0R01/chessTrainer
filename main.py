@@ -49,8 +49,19 @@ async def read_root():
     return HTMLResponse(content=html_content)
 
 
+@app.get("/engines")
+async def get_engines():
+    """Devuelve la lista de motores disponibles"""
+    return {"engines": list(engine_manager.engines.keys())}
+
+
 @app.post("/move")
 async def get_best_move(move_request: MoveRequest):
     engine = engine_manager.get_engine(move_request.engine)
     best_move = await engine.get_best_move(move_request.fen, move_request.depth)
     return {"bestmove": best_move}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

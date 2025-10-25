@@ -57,7 +57,7 @@ sleep 2
 # Iniciar frontend en segundo plano
 echo -e "${BLUE}🎨 Iniciando Frontend (Vite)...${NC}"
 cd frontend
-npm run dev > ../logs_frontend.log 2>&1 &
+npm run dev -- --host > ../logs_frontend.log 2>&1 &
 FRONTEND_PID=$!
 cd ..
 echo "   Frontend PID: $FRONTEND_PID"
@@ -106,4 +106,5 @@ echo ""
 
 # Mantener el script corriendo
 wait
+
 
