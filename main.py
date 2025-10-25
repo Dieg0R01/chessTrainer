@@ -3,8 +3,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from engine_manager import EngineManager
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
 
 
 class MoveRequest(BaseModel):
@@ -26,14 +24,17 @@ app.add_middleware(
 
 engine_manager = EngineManager()
 
-# Montar los archivos estáticos del frontend
-app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")
-
 
 @app.get("/")
 async def read_root():
-    with open("static/index.html", "r") as f:
-        return HTMLResponse(content=f.read())
+    return {
+        "message": "Chess Trainer API",
+        "version": "1.0.0",
+        "endpoints": {
+            "GET /engines": "Lista de motores disponibles",
+            "POST /move": "Obtener mejor movimiento de un motor"
+        }
+    }
 
 
 @app.get("/engines")
