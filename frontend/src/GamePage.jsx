@@ -38,7 +38,9 @@ function GamePage() {
   const makeEngineMove = async (engineName) => {
     try {
       const game = gameRef.current;
-      const response = await fetch('http://localhost:8000/move', {
+      // Obtener la URL del backend dinámicamente basándose en la URL actual
+      const backendUrl = window.location.origin.replace(':5173', ':8000');
+      const response = await fetch(`${backendUrl}/move`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

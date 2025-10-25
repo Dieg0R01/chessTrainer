@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from engine_manager import EngineManager
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+import os
 
 
 class MoveRequest(BaseModel):
@@ -15,10 +16,10 @@ class MoveRequest(BaseModel):
 
 app = FastAPI()
 
-# Configurar CORS
+# Configurar CORS - Permitir conexiones desde cualquier origen (desarrollo local en red)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Puertos comunes de Vite y React
+    allow_origins=["*"],  # Permitir cualquier origen (útil para desarrollo en red local)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,14 +27,26 @@ app.add_middleware(
 
 engine_manager = EngineManager()
 
-# Montar los archivos estáticos del frontend
-app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")
+# Solo montar archivos estáticos si existe el directorio dist (modo producción)
+if os.path.exists("frontend/dist"):
+    app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")
 
 
 @app.get("/")
 async def read_root():
-    with open("static/index.html", "r") as f:
-        return HTMLResponse(content=f.read())
+    # En desarrollo, redirigir al servidor de Vite
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta http-equiv="refresh" content="0; url=http://localhost:5173">
+    </head>
+    <body>
+        <p>Redirigiendo a <a href="http://localhost:5173">http://localhost:5173</a></p>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
 
 @app.post("/move")

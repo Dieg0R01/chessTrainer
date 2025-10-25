@@ -35,14 +35,20 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
+# Obtener IP local para mostrar en la salida
+LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -1)
+
 # Iniciar backend en segundo plano
 echo -e "${BLUE}📦 Iniciando Backend (FastAPI)...${NC}"
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate chess
-uvicorn main:app --reload --port 8000 > logs_backend.log 2>&1 &
+uvicorn main:app --reload --host 0.0.0.0 --port 8000 > logs_backend.log 2>&1 &
 BACKEND_PID=$!
 echo "   Backend PID: $BACKEND_PID"
-echo "   URL: http://localhost:8000"
+echo "   URL Local: http://localhost:8000"
+if [ -n "$LOCAL_IP" ]; then
+    echo "   URL Red: http://$LOCAL_IP:8000"
+fi
 echo ""
 
 # Esperar un poco para que el backend inicie
@@ -55,7 +61,10 @@ npm run dev > ../logs_frontend.log 2>&1 &
 FRONTEND_PID=$!
 cd ..
 echo "   Frontend PID: $FRONTEND_PID"
-echo "   URL: http://localhost:5173"
+echo "   URL Local: http://localhost:5173"
+if [ -n "$LOCAL_IP" ]; then
+    echo "   URL Red: http://$LOCAL_IP:5173"
+fi
 echo ""
 
 # Esperar un poco para verificar que iniciaron correctamente
@@ -76,10 +85,19 @@ fi
 echo -e "${GREEN}✅ Chess Trainer está corriendo!${NC}"
 echo ""
 echo "📋 Información:"
-echo "   - Frontend: http://localhost:5173"
-echo "   - Backend:  http://localhost:8000"
-echo "   - Logs backend:  tail -f logs_backend.log"
-echo "   - Logs frontend: tail -f logs_frontend.log"
+if [ -n "$LOCAL_IP" ]; then
+    echo "   🌐 Acceso desde tu red local:"
+    echo "      - Frontend: http://$LOCAL_IP:5173"
+    echo "      - Backend:  http://$LOCAL_IP:8000"
+    echo ""
+fi
+echo "   💻 Acceso local:"
+echo "      - Frontend: http://localhost:5173"
+echo "      - Backend:  http://localhost:8000"
+echo ""
+echo "   📝 Logs:"
+echo "      - Backend:  tail -f logs_backend.log"
+echo "      - Frontend: tail -f logs_frontend.log"
 echo ""
 echo "Para detener la aplicación:"
 echo "   - Presiona Ctrl+C en esta terminal"
