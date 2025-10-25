@@ -15,10 +15,10 @@ class MoveRequest(BaseModel):
 
 app = FastAPI()
 
-# Configurar CORS
+# Configurar CORS - Permitir conexiones desde cualquier origen (desarrollo local en red)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Puertos comunes de Vite y React
+    allow_origins=["*"],  # Permitir cualquier origen (útil para desarrollo en red local)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
