@@ -10,7 +10,9 @@ function SelectionPage() {
 
   useEffect(() => {
     // Obtener los motores disponibles del backend
-    fetch('http://localhost:8000/engines')
+    // Obtener la URL del backend dinámicamente basándose en la URL actual
+    const backendUrl = window.location.origin.replace(':5173', ':8000');
+    fetch(`${backendUrl}/engines`)
       .then(response => response.json())
       .then(data => {
         setAvailableEngines(data.engines);
