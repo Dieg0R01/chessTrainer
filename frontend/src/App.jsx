@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import GamePage from './GamePage'; // Vamos a crear este archivo
+import GamePage from './GamePage';
 
 function SelectionPage() {
   const [selectedEngineA, setSelectedEngineA] = useState("");
