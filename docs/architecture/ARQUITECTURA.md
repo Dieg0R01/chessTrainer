@@ -540,3 +540,5 @@ Recargar configuración sin reiniciar servidor
 **Fecha**: 2025  
 **Autor**: Chess Trainer Team
 
+
+

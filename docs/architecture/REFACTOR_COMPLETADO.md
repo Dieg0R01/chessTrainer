@@ -546,3 +546,5 @@ El refactor del proyecto Chess Trainer ha sido **completado exitosamente**, impl
 
 ¡El sistema está listo para usarse y extenderse según las necesidades futuras!
 
+
+

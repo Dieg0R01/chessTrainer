@@ -292,10 +292,10 @@ stockfish-local:
 
 ## 🔗 Links Útiles
 
-- [Documentación de Refactorización](docs/REFACTORIZACION_PROTOCOLOS.md)
-- [Ejemplos de Uso](docs/EJEMPLO_USO_PROTOCOLOS.md)
-- [Patrones de Diseño](docs/patrones_diseño.md)
-- [README Principal](README.md)
+- [Documentación de Refactorización](../architecture/REFACTORIZACION_PROTOCOLOS.md)
+- [Ejemplos de Uso](../development/EJEMPLO_USO_PROTOCOLOS.md)
+- [Patrones de Diseño](../architecture/patrones_diseño.md)
+- [README Principal](../../README.md)
 
 ---
 
