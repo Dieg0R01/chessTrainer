@@ -10,7 +10,12 @@ venv/
 
 # Node
 node_modules/
+frontend/node_modules/
 dist/
+frontend/dist/
+
+# Frontend (ignorado en rama backend)
+frontend/
 
 # OS
 .DS_Store
@@ -21,6 +26,7 @@ dist/
 # IDE
 .idea/
 .vscode/
+.cursor/
 
 # Docker
 *.dockerignore
