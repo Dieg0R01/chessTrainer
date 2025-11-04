@@ -1,2 +1,0 @@
-(A) hola
-(B) adios

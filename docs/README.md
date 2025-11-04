@@ -1,123 +1,221 @@
-# 📚 Documentación del Chess Trainer
+# 📚 Documentación Chess Trainer
 
-Bienvenido a la documentación técnica del proyecto Chess Trainer.
+Índice completo de la documentación del proyecto Chess Trainer v2.0.0.
 
-## 📁 Archivos Disponibles
-
-### 🏗️ Arquitectura y Diseño
-
-1. **[engine_manager_explicacion.md](engine_manager_explicacion.md)**
-   - Explicación detallada del funcionamiento del Engine Manager
-   - Teoría de los patrones de diseño aplicados
-   - Ejemplos de uso y código
-   - Posibles extensiones futuras
-
-2. **[patrones_diseño.md](patrones_diseño.md)**
-   - Explicación visual y práctica de los patrones de diseño
-   - Analogías del mundo real
-   - Comparación antes/después del diseño
-   - Ejemplos de código comentados
-
-### 📊 Diagramas
-
-#### Diagrama de Arquitectura (Diagrams)
-
-3. **[engine_manager_architecture.png](engine_manager_architecture.png)**
-   - Diagrama visual de la arquitectura completa
-   - Generado con [Diagrams](https://diagrams.mingrammer.com/)
-   - Muestra flujos de comunicación y relaciones entre componentes
-
-4. **[generate_diagram.py](generate_diagram.py)**
-   - Script para regenerar el diagrama de arquitectura
-   - Usa la biblioteca Diagrams (Diagram as Code)
-   - Ejecutar con: `python docs/generate_diagram.py`
-
-#### Diagrama de Clases UML (Mermaid)
-
-5. **[class_diagram_mermaid.html](class_diagram_mermaid.html)**
-   - Diagrama de clases UML interactivo
-   - Generado con [Mermaid.js](https://mermaid.js.org/)
-   - Incluye detalles de atributos, métodos y relaciones
-   - Abrir en navegador para visualización completa
-
-6. **[class_diagram_mermaid.md](class_diagram_mermaid.md)**
-   - Diagrama de clases en formato Markdown
-   - Se renderiza automáticamente en GitHub
-   - Compatible con editores que soportan Mermaid
-   - Incluye documentación completa de cada clase
-
-## 🚀 Cómo Usar Esta Documentación
-
-### Para Desarrolladores Nuevos
-
-1. Lee primero `engine_manager_explicacion.md` para entender la arquitectura
-2. Revisa el diagrama `engine_manager_architecture.png` para visualizar el sistema
-3. Consulta el código fuente en `../engine_manager.py`
-
-### Para Extender el Sistema
-
-1. Revisa la sección "Posibles Extensiones" en `engine_manager_explicacion.md`
-2. Sigue los patrones de diseño existentes (Adapter, Strategy, Factory)
-3. Actualiza la configuración en `../config/engines.yaml`
-
-### Para Regenerar los Diagramas
-
-#### Diagrama de Arquitectura (Diagrams)
-```bash
-# Asegúrate de estar en el entorno conda correcto
-conda activate chess
-
-# Ejecuta el script desde el directorio raíz del proyecto
-cd /Users/diegor/dev/chessTrainer
-python docs/generate_diagram.py
-```
-
-#### Diagrama de Clases UML (Mermaid)
-
-**Opción 1: Ver en Navegador (Recomendado)**
-```bash
-open docs/class_diagram_mermaid.html
-```
-
-**Opción 2: Ver en GitHub**
-- Sube el archivo `class_diagram_mermaid.md` a GitHub
-- El diagrama se renderiza automáticamente
-
-**Opción 3: Ver en VS Code**
-1. Instala la extensión "Markdown Preview Mermaid Support"
-2. Abre `class_diagram_mermaid.md`
-3. Presiona `Cmd+Shift+V` (Mac) o `Ctrl+Shift+V` (Windows)
-
-**Opción 4: Editor Online**
-- Visita [https://mermaid.live](https://mermaid.live)
-- Copia y pega el código del diagrama
-
-## 🎯 Componentes Principales Documentados
-
-- ✅ **EngineInterface**: Interfaz abstracta para motores
-- ✅ **UciEngineAdapter**: Adaptador para motores UCI (Stockfish, etc.)
-- ✅ **RestEngineAdapter**: Adaptador para APIs REST
-- ✅ **EngineManager**: Gestor y fábrica de motores
-
-## 🛠️ Tecnologías
-
-- **Python 3.12+**
-- **asyncio**: Programación asíncrona
-- **httpx**: Cliente HTTP asíncrono
-- **pyyaml**: Configuración
-- **jsonpath**: Extracción de datos JSON
-- **diagrams**: Generación de diagramas
-- **graphviz**: Renderizado de grafos
-
-## 📖 Recursos Adicionales
-
-- [Documentación de Diagrams](https://diagrams.mingrammer.com/)
-- [Protocolo UCI](https://www.chessprogramming.org/UCI)
-- [Patrones de Diseño](https://refactoring.guru/es/design-patterns)
-- [Principios SOLID](https://en.wikipedia.org/wiki/SOLID)
+> 📋 **¿Primera vez aquí?** Lee [NUEVA_ESTRUCTURA_DOCS.md](NUEVA_ESTRUCTURA_DOCS.md) para conocer la nueva organización.
 
 ---
 
-**Última actualización**: Octubre 2025  
-**Versión**: 1.0
+## 🏗️ Arquitectura
+
+Documentación sobre el diseño y arquitectura del sistema.
+
+- **[ARQUITECTURA.md](architecture/ARQUITECTURA.md)** - Arquitectura completa del sistema
+  - Visión general del sistema
+  - Ejes de clasificación de motores
+  - Matriz de clasificación
+  - Patrones de diseño aplicados
+  - Flujos por tipo de motor
+
+- **[REFACTORIZACION_PROTOCOLOS.md](architecture/REFACTORIZACION_PROTOCOLOS.md)** - Refactorización v2.0 con protocolos
+  - Sistema de protocolos (UCI, REST, LocalLLM, APILLM)
+  - Arquitectura antes y después
+  - Comparación de implementaciones
+  - Beneficios de la refactorización
+
+- **[REFACTOR_COMPLETADO.md](architecture/REFACTOR_COMPLETADO.md)** - Detalles del proceso de refactorización
+  - Checklist completo
+  - Validaciones realizadas
+  - Métricas de calidad
+
+- **[patrones_diseño.md](architecture/patrones_diseño.md)** - Patrones de diseño utilizados
+  - Strategy Pattern
+  - Factory Method
+  - Adapter Pattern
+  - Bridge Pattern
+  - Template Method
+
+- **[engine_manager_explicacion.md](architecture/engine_manager_explicacion.md)** - Gestión de motores
+  - Funcionamiento del EngineManager
+  - Teoría de patrones aplicados
+  - Ejemplos de uso
+
+- **[motores_hibridos.md](architecture/motores_hibridos.md)** - Motores híbridos (futuro)
+  - Diseño propuesto
+  - Casos de uso
+  - Implementación futura
+
+---
+
+## 💻 Desarrollo
+
+Guías y ejemplos para desarrolladores.
+
+- **[EJEMPLO_USO_PROTOCOLOS.md](development/EJEMPLO_USO_PROTOCOLOS.md)** - Ejemplos prácticos
+  - 10 ejemplos de uso de protocolos
+  - Casos avanzados
+  - Testing con mocks
+  - Personalización de prompts
+
+- **[class_diagram_mermaid.md](development/class_diagram_mermaid.md)** - Diagrama de clases UML
+  - Diagrama completo en Mermaid
+  - Relaciones entre clases
+  - Atributos y métodos
+
+---
+
+## 📝 Changelog
+
+Historial de cambios y versiones.
+
+- **[CAMBIOS_v2.0.0.md](changelog/CAMBIOS_v2.0.0.md)** - Changelog completo v2.0.0
+  - Nuevas características
+  - Cambios en arquitectura
+  - Mejoras de rendimiento
+  - Bugs corregidos
+  - Guía de migración
+
+- **[RESUMEN_REFACTORIZACION.md](changelog/RESUMEN_REFACTORIZACION.md)** - Resumen ejecutivo
+  - Resultados en números
+  - Beneficios obtenidos
+  - Estado final
+
+- **[TODO_REFACTORIZACION.md](changelog/TODO_REFACTORIZACION.md)** - Tareas completadas
+  - Checklist de tareas
+  - Estado de implementación
+
+---
+
+## 🚀 Despliegue
+
+Guías de instalación, despliegue y verificación.
+
+- **[DESPLIEGUE.md](deployment/DESPLIEGUE.md)** - Guía de despliegue
+  - Requisitos previos
+  - Instalación paso a paso
+  - Configuración de motores
+  - Solución de problemas
+  - Scripts de inicio/parada
+
+- **[VERIFICACION_FINAL.md](deployment/VERIFICACION_FINAL.md)** - Verificación completa
+  - Checklist de verificación
+  - Validaciones técnicas
+  - Métricas de calidad
+  - Estado de producción
+
+---
+
+## 📊 Diagramas
+
+Diagramas visuales de la arquitectura.
+
+- **[class_diagram_mermaid.html](diagrams/class_diagram_mermaid.html)** - Diagrama de clases interactivo
+  - Abrirlo en navegador para visualización completa
+
+- **[engine_manager_architecture.png](diagrams/engine_manager_architecture.png)** - Diagrama de arquitectura
+  - Arquitectura visual completa
+  - Flujos de comunicación
+
+- **[generate_diagram.py](diagrams/generate_diagram.py)** - Script generador
+  - Genera el diagrama de arquitectura
+  - Ejecutar: `python docs/diagrams/generate_diagram.py`
+
+---
+
+## 🎯 Rutas de Aprendizaje
+
+### Para Desarrolladores Nuevos
+
+1. Comienza con el [README principal](../README.md)
+2. Lee la [Arquitectura completa](architecture/ARQUITECTURA.md)
+3. Revisa los [Patrones de diseño](architecture/patrones_diseño.md)
+4. Explora los [Ejemplos de uso](development/EJEMPLO_USO_PROTOCOLOS.md)
+5. Visualiza el [Diagrama de clases](development/class_diagram_mermaid.md)
+
+### Para Extender el Sistema
+
+1. Revisa la [Arquitectura de protocolos](architecture/REFACTORIZACION_PROTOCOLOS.md)
+2. Consulta los [Ejemplos prácticos](development/EJEMPLO_USO_PROTOCOLOS.md)
+3. Estudia los [Patrones de diseño](architecture/patrones_diseño.md)
+4. Revisa el código fuente en los módulos correspondientes
+
+### Para Desplegar
+
+1. Sigue la [Guía de despliegue](deployment/DESPLIEGUE.md)
+2. Consulta la [Verificación final](deployment/VERIFICACION_FINAL.md)
+3. Lee sobre posibles problemas en la sección de solución de problemas
+
+### Para Entender los Cambios v2.0
+
+1. Lee el [Resumen de refactorización](changelog/RESUMEN_REFACTORIZACION.md)
+2. Revisa el [Changelog completo](changelog/CAMBIOS_v2.0.0.md)
+3. Compara con la [Documentación de protocolos](architecture/REFACTORIZACION_PROTOCOLOS.md)
+
+---
+
+## 🔗 Enlaces Rápidos
+
+- [README Principal](../README.md)
+- [Configuración de Motores](../config/engines.yaml)
+- [Código Fuente - engines/](../engines/)
+- [Gestor de Motores](../engine_manager.py)
+- [API Principal](../main.py)
+
+---
+
+## 📦 Estructura del Proyecto
+
+```
+chessTrainer/
+├── README.md                  # Documentación principal
+├── main.py                    # API FastAPI
+├── engine_manager.py          # Gestor de motores
+├── config/
+│   └── engines.yaml          # Configuración de motores
+├── engines/                   # Módulo de motores
+│   ├── base.py
+│   ├── factory.py
+│   ├── traditional.py
+│   ├── neuronal.py
+│   ├── generative.py
+│   ├── validators.py
+│   └── protocols/            # Protocolos de comunicación
+│       ├── base.py
+│       ├── uci.py
+│       ├── rest.py
+│       ├── local_llm.py
+│       └── api_llm.py
+└── docs/                     # Documentación (aquí estás)
+    ├── architecture/         # Arquitectura del sistema
+    ├── development/          # Guías de desarrollo
+    ├── changelog/            # Historial de cambios
+    ├── deployment/           # Despliegue y verificación
+    └── diagrams/             # Diagramas visuales
+```
+
+---
+
+## 🛠️ Tecnologías
+
+- **Python 3.9+**
+- **FastAPI** - Framework web asíncrono
+- **python-chess** - Librería de ajedrez
+- **httpx** - Cliente HTTP asíncrono
+- **pyyaml** - Configuración YAML
+- **jsonpath** - Extracción de datos JSON
+
+---
+
+## 📞 Soporte
+
+- Consulta el [README principal](../README.md) para información general
+- Revisa la [Guía de despliegue](deployment/DESPLIEGUE.md) para problemas de instalación
+- Lee los [Ejemplos de uso](development/EJEMPLO_USO_PROTOCOLOS.md) para casos específicos
+
+---
+
+**Versión**: 2.0.0  
+**Última actualización**: Noviembre 2025  
+**Mantenedor**: Chess Trainer Development Team
+
 

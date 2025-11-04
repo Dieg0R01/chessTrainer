@@ -347,3 +347,5 @@ La arquitectura actual de Chess Trainer está diseñada para soportar esta exten
 **Versión**: 1.0  
 **Autor**: Chess Trainer Team
 
+
+

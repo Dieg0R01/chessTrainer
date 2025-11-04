@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](CAMBIOS_v2.0.0.md)
+[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](docs/changelog/CAMBIOS_v2.0.0.md)
 
 Sistema modular y extensible para trabajar con múltiples motores de ajedrez: tradicionales, neuronales y generativos.
 
@@ -16,7 +16,7 @@ Sistema modular y extensible para trabajar con múltiples motores de ajedrez: tr
 - 📦 **100% retrocompatible** con configuraciones existentes
 - 📚 **Documentación completa** de la nueva arquitectura
 
-👉 **[Ver cambios completos](CAMBIOS_v2.0.0.md)** | **[Documentación técnica](docs/REFACTORIZACION_PROTOCOLOS.md)** | **[Ejemplos de uso](docs/EJEMPLO_USO_PROTOCOLOS.md)**
+👉 **[Ver cambios completos](docs/changelog/CAMBIOS_v2.0.0.md)** | **[Documentación técnica](docs/architecture/REFACTORIZACION_PROTOCOLOS.md)** | **[Ejemplos de uso](docs/development/EJEMPLO_USO_PROTOCOLOS.md)**
 
 ## 🚀 Características
 
@@ -268,11 +268,13 @@ chessTrainer/
 
 ## 📚 Documentación
 
+> 👉 **[Índice completo de documentación](docs/README.md)** - Navegación organizada por categorías
+
 ### Documentación Detallada
 
-- [**ARQUITECTURA.md**](docs/ARQUITECTURA.md) - Arquitectura completa del sistema
-- [**motores_hibridos.md**](docs/motores_hibridos.md) - Motores híbridos (implementación futura)
-- [**patrones_diseño.md**](docs/patrones_diseño.md) - Patrones de diseño utilizados
+- [**ARQUITECTURA.md**](docs/architecture/ARQUITECTURA.md) - Arquitectura completa del sistema
+- [**motores_hibridos.md**](docs/architecture/motores_hibridos.md) - Motores híbridos (implementación futura)
+- [**patrones_diseño.md**](docs/architecture/patrones_diseño.md) - Patrones de diseño utilizados
 
 ### Guías
 
@@ -288,7 +290,7 @@ chessTrainer/
    - Personalizar `prompt_template` si es necesario
 
 3. **Desplegar en Producción**
-   - Ver [DESPLIEGUE.md](DESPLIEGUE.md) para instrucciones
+   - Ver [DESPLIEGUE.md](docs/deployment/DESPLIEGUE.md) para instrucciones
 
 ## 🔧 Desarrollo
 
@@ -361,4 +363,4 @@ Este proyecto está bajo la Licencia MIT. Ver archivo [LICENSE](LICENSE) para m�
 **Versión**: 2.0.0  
 **Última actualización**: 2025
 
-Para más información, consulta la [documentación completa](docs/ARQUITECTURA.md).
+Para más información, consulta la [documentación completa](docs/architecture/ARQUITECTURA.md).

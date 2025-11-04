@@ -368,8 +368,8 @@ if __name__ == "__main__":
 
 ## 🔗 Recursos
 
-- [Documentación de Refactorización](REFACTORIZACION_PROTOCOLOS.md)
-- [Patrones de Diseño](patrones_diseño.md)
+- [Documentación de Refactorización](../architecture/REFACTORIZACION_PROTOCOLOS.md)
+- [Patrones de Diseño](../architecture/patrones_diseño.md)
 - [Configuración de Motores](../config/engines.yaml)
 
 ---
