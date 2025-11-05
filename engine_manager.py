@@ -1,123 +1,202 @@
-from abc import ABC, abstractmethod
-import yaml
-import httpx
-import asyncio
-from jsonpath import jsonpath
+"""
+Gestor de motores de ajedrez.
+Utiliza el sistema de Factory y Registry para gestionar múltiples motores.
+"""
 
+import logging
+from typing import Dict, Optional, List
+from engines import MotorBase, EngineFactory, EngineClassifier, MotorType, MotorOrigin
 
-class EngineInterface(ABC):
-    @abstractmethod
-    def get_best_move(self, fen: str, depth: int) -> str:
-        pass
-
-
-class UciEngineAdapter(EngineInterface):
-    def __init__(self, config: dict):
-        self.command = config["command"]
-        self.process = None
-
-    async def _start_engine(self):
-        self.process = await asyncio.create_subprocess_exec(
-            *self.command.split(),
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE
-        )
-        await self._read_until("uciok")
-        await self._write_command("isready")
-        await self._read_until("readyok")
-
-    async def _write_command(self, command: str):
-        if self.process and self.process.stdin:  # type: ignore
-            self.process.stdin.write(f"{command}\n".encode())
-            await self.process.stdin.drain()
-
-    async def _read_until(self, expected_output: str) -> str:
-        output = []
-        while True:
-            if self.process and self.process.stdout:  # type: ignore
-                line = await self.process.stdout.readline()
-                line = line.decode().strip()
-                output.append(line)
-                if expected_output in line:
-                    return "\n".join(output)
-            else:
-                raise RuntimeError("Motor UCI no iniciado o canal de salida no disponible.")
-
-    async def get_best_move(self, fen: str, depth: int) -> str:
-        if not self.process or self.process.returncode is not None:
-            await self._start_engine()
-
-        await self._write_command(f"position fen {fen}")
-        await self._write_command(f"go depth {depth}")
-        
-        while True:
-            output_line = await self.process.stdout.readline() # type: ignore
-            decoded_line = output_line.decode().strip()
-            if decoded_line.startswith("bestmove"):
-                return decoded_line.split()[1]
-
-
-class RestEngineAdapter(EngineInterface):
-    def __init__(self, config: dict):
-        self.method = config["method"]
-        self.url = config["url"]
-        self.params_template = config.get("params", {})
-        self.extract_path = config["extract"]
-
-    async def get_best_move(self, fen: str, depth: int) -> str:
-        # Formatear los parámetros
-        formatted_params = {}
-        for k, v in self.params_template.items():
-            formatted_value = v.format(fen=fen, depth=depth)
-            formatted_params[k] = formatted_value
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            if self.method.upper() == "GET":
-                # Para Lichess, construir la URL manualmente para evitar problemas de codificación
-                response = await client.get(self.url, params=formatted_params)
-            elif self.method.upper() == "POST":
-                response = await client.post(self.url, json=formatted_params)
-            else:
-                raise ValueError(f"Método HTTP no soportado: {self.method}")
-            # Manejar respuestas de error específicas de la API
-            if response.status_code == 404:
-                data = response.json()
-                error_msg = data.get('error', 'Recurso no encontrado')
-                raise ValueError(f"API Error: {error_msg}. La posición no está en la base de datos de Lichess cloud.")
-            
-            response.raise_for_status()
-            data = response.json()
-            
-            # Extracción del mejor movimiento usando jsonpath
-            result = jsonpath(data, self.extract_path)
-            if result:
-                # Si el resultado es una cadena de movimientos (ej: "e2e4 e7e5"), tomar solo el primero
-                moves_string = result[0]
-                if isinstance(moves_string, str) and ' ' in moves_string:
-                    return moves_string.split()[0]
-                return moves_string
-            else:
-                raise ValueError(f"No se pudo extraer el mejor movimiento de la respuesta con '{self.extract_path}': {data}")
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 class EngineManager:
+    """
+    Gestor centralizado de motores de ajedrez.
+    Proporciona interfaz unificada para trabajar con múltiples motores.
+    """
+    
     def __init__(self, config_path: str = "config/engines.yaml"):
-        self.engines = {}
+        """
+        Inicializa el gestor de motores.
+        
+        Args:
+            config_path: Ruta al archivo de configuración YAML
+        """
+        self.config_path = config_path
+        self.engines: Dict[str, MotorBase] = {}
         self.load_config(config_path)
-
-    def load_config(self, config_path: str):
-        with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
-        for engine_name, engine_config in config.get("engines", {}).items():
-            engine_type = engine_config.get("type", "rest") # Por defecto, REST
-            if engine_type == "rest":
-                self.engines[engine_name] = RestEngineAdapter(engine_config)
-            elif engine_type == "uci":
-                self.engines[engine_name] = UciEngineAdapter(engine_config)
-            else:
-                raise ValueError(f"Tipo de motor no soportado: {engine_type}")
-
-    def get_engine(self, name: str) -> EngineInterface:
+    
+    def load_config(self, config_path: str) -> None:
+        """
+        Carga la configuración de motores desde YAML.
+        
+        Args:
+            config_path: Ruta al archivo de configuración
+        """
+        try:
+            self.engines = EngineFactory.create_from_yaml(config_path)
+            logger.info(f"Configuración cargada: {len(self.engines)} motores disponibles")
+        except Exception as e:
+            logger.error(f"Error cargando configuración desde {config_path}: {e}")
+            raise
+    
+    def reload_config(self) -> None:
+        """Recarga la configuración desde el archivo"""
+        # Limpiar motores existentes
+        for engine in self.engines.values():
+            try:
+                import asyncio
+                asyncio.create_task(engine.cleanup())
+            except Exception as e:
+                logger.warning(f"Error limpiando motor al recargar: {e}")
+        
+        self.engines.clear()
+        self.load_config(self.config_path)
+    
+    def get_engine(self, name: str) -> MotorBase:
+        """
+        Obtiene un motor por nombre.
+        
+        Args:
+            name: Nombre del motor
+            
+        Returns:
+            Instancia del motor
+            
+        Raises:
+            ValueError: Si el motor no existe
+        """
         if name not in self.engines:
-            raise ValueError(f"Motor '{name}' no encontrado en la configuración.")
+            available = ", ".join(self.engines.keys())
+            raise ValueError(
+                f"Motor '{name}' no encontrado. "
+                f"Motores disponibles: {available}"
+            )
+        
         return self.engines[name]
+    
+    def list_engines(self) -> List[str]:
+        """
+        Lista los nombres de todos los motores disponibles.
+        
+        Returns:
+            Lista de nombres de motores
+        """
+        return list(self.engines.keys())
+    
+    def get_engines_info(self) -> List[Dict]:
+        """
+        Obtiene información de todos los motores.
+        
+        Returns:
+            Lista con información de cada motor
+        """
+        return [engine.get_info() for engine in self.engines.values()]
+    
+    def get_classification_matrix(self) -> List[Dict]:
+        """
+        Genera matriz de clasificación de motores.
+        
+        Returns:
+            Matriz de clasificación
+        """
+        return EngineClassifier.generate_classification_matrix(self.engines)
+    
+    def filter_engines_by_type(self, motor_type: MotorType) -> Dict[str, MotorBase]:
+        """
+        Filtra motores por tipo.
+        
+        Args:
+            motor_type: Tipo de motor (TRADITIONAL, NEURONAL, GENERATIVE)
+            
+        Returns:
+            Diccionario de motores filtrados
+        """
+        return EngineClassifier.filter_by_type(self.engines, motor_type)
+    
+    def filter_engines_by_origin(self, motor_origin: MotorOrigin) -> Dict[str, MotorBase]:
+        """
+        Filtra motores por origen.
+        
+        Args:
+            motor_origin: Origen (INTERNAL, EXTERNAL)
+            
+        Returns:
+            Diccionario de motores filtrados
+        """
+        return EngineClassifier.filter_by_origin(self.engines, motor_origin)
+    
+    async def get_best_move(self, engine_name: str, fen: str, depth: Optional[int] = None, **kwargs) -> str:
+        """
+        Obtiene el mejor movimiento de un motor específico.
+        
+        Args:
+            engine_name: Nombre del motor
+            fen: Posición en formato FEN
+            depth: Profundidad de análisis (opcional)
+            **kwargs: Parámetros adicionales específicos del motor
+            
+        Returns:
+            Mejor movimiento en formato UCI
+        """
+        engine = self.get_engine(engine_name)
+        
+        try:
+            move = await engine.get_move(fen, depth, **kwargs)
+            logger.info(f"Movimiento obtenido de {engine_name}: {move}")
+            return move
+        except Exception as e:
+            logger.error(f"Error obteniendo movimiento de {engine_name}: {e}")
+            raise
+    
+    async def compare_engines(self, fen: str, depth: Optional[int] = None) -> Dict[str, str]:
+        """
+        Compara las sugerencias de todos los motores disponibles.
+        
+        Args:
+            fen: Posición en formato FEN
+            depth: Profundidad de análisis
+            
+        Returns:
+            Diccionario {engine_name: move}
+        """
+        results = {}
+        
+        for name, engine in self.engines.items():
+            try:
+                move = await engine.get_move(fen, depth)
+                results[name] = move
+            except Exception as e:
+                logger.warning(f"Motor {name} falló: {e}")
+                results[name] = f"ERROR: {str(e)}"
+        
+        return results
+    
+    async def cleanup_all(self) -> None:
+        """Limpia recursos de todos los motores"""
+        for name, engine in self.engines.items():
+            try:
+                await engine.cleanup()
+                logger.info(f"Motor {name} limpiado")
+            except Exception as e:
+                logger.warning(f"Error limpiando motor {name}: {e}")
+    
+    def __len__(self) -> int:
+        """Retorna el número de motores cargados"""
+        return len(self.engines)
+    
+    def __contains__(self, engine_name: str) -> bool:
+        """Verifica si un motor existe"""
+        return engine_name in self.engines
+    
+    def __str__(self) -> str:
+        return f"EngineManager({len(self.engines)} motores: {', '.join(self.engines.keys())})"
+    
+    def __repr__(self) -> str:
+        return self.__str__()

@@ -1,11 +1,127 @@
+# Configuración de motores de ajedrez
+# Soporta motores tradicionales, neuronales y generativos
+
 engines:
-  lichess:
+  # ============================================================================
+  # MOTORES TRADICIONALES - DETERMINISTAS
+  # ============================================================================
+  
+  # Motor UCI local: Stockfish
+  stockfish-local:
+    engine_type: traditional_uci
+    type: uci
+    command: "stockfish"
+    default_depth: 15
+    description: "Stockfish - Motor determinista local vía UCI"
+  
+  # Motor REST externo: Lichess Cloud Analysis
+  lichess-cloud:
+    engine_type: traditional_rest
     method: GET
     url: "https://lichess.org/api/cloud-eval"
     params:
       fen: "{fen}"
       multiPv: "1"
     extract: "$.pvs[0].moves"
-  stockfish-local:
-    type: uci
-    command: "stockfish"
+    timeout: 30.0
+    description: "Lichess Cloud Analysis - Motor externo REST"
+  
+  # ============================================================================
+  # MOTORES NEURONALES
+  # ============================================================================
+  
+  # Leela Chess Zero (LCZero) - Local UCI
+  lc0-local:
+    engine_type: neuronal
+    protocol: uci
+    command: "lc0"
+    # weights: "/path/to/weights/file.pb.gz"  # Opcional: archivo de pesos
+    backend: "auto"  # auto, cuda, cudnn, opencl, blas, etc.
+    search_mode: "nodes"  # nodes, depth, time
+    default_search_value: 800000  # Número de nodos para evaluar
+    description: "Leela Chess Zero - Motor neuronal local"
+  
+  # Motor neuronal remoto (ejemplo: servicio con GPU)
+  # neuronal-remote:
+  #   engine_type: neuronal
+  #   protocol: rest
+  #   method: POST
+  #   url: "https://api.example.com/chess/analyze"
+  #   api_key: "YOUR_API_KEY"
+  #   timeout: 60.0
+  #   extra_params:
+  #     model: "lc0-latest"
+  #   description: "Motor neuronal remoto con GPU"
+  
+  # ============================================================================
+  # MOTORES GENERATIVOS - LLMs
+  # ============================================================================
+  
+  # GPT-4 Chess Assistant (OpenAI)
+  gpt4-chess:
+    engine_type: generative
+    provider: openai
+    model: "gpt-4"
+    api_key: "YOUR_OPENAI_API_KEY"  # Cambiar por tu API key real
+    temperature: 0.3
+    max_tokens: 500
+    prompt_template: |
+      Eres un asistente experto en ajedrez.
+      
+      Posición actual (FEN): {fen}
+      Histórico: {move_history}
+      Estrategia: {strategy}
+      
+      Analiza la posición y sugiere el mejor movimiento en formato UCI (ej: e2e4).
+      Responde SOLO con el movimiento seguido de tu razonamiento breve.
+      
+      MOVIMIENTO:
+    description: "GPT-4 Chess Assistant - Motor generativo"
+  
+  # Claude Chess Assistant (Anthropic)
+  # claude-chess:
+  #   engine_type: generative
+  #   provider: anthropic
+  #   model: "claude-3-opus-20240229"
+  #   api_key: "YOUR_ANTHROPIC_API_KEY"
+  #   max_tokens: 500
+  #   description: "Claude Chess Assistant - Motor generativo"
+  
+  # Modelo LLM local (ejemplo: Ollama, LM Studio, etc.)
+  # llm-local:
+  #   engine_type: generative
+  #   provider: local
+  #   endpoint: "http://localhost:8080"
+  #   model_path: "/path/to/model"
+  #   temperature: 0.3
+  #   max_tokens: 500
+  #   description: "Modelo LLM local"
+
+# ============================================================================
+# NOTAS DE CONFIGURACIÓN
+# ============================================================================
+#
+# 1. MOTORES TRADICIONALES:
+#    - UCI: Requieren 'command' (ejecutable del motor)
+#    - REST: Requieren 'url', 'method', y 'extract' (JSONPath)
+#
+# 2. MOTORES NEURONALES:
+#    - UCI: Similar a tradicionales pero con opciones adicionales (weights, backend)
+#    - REST: Requieren endpoint de API con GPU
+#    - Pueden usar 'nodes' en vez de 'depth'
+#
+# 3. MOTORES GENERATIVOS:
+#    - OpenAI/Anthropic: Requieren 'api_key' y 'model'
+#    - Local: Requieren 'endpoint' o 'model_path'
+#    - Usan validación por prompt (extracción de texto)
+#
+# 4. PARÁMETROS COMUNES:
+#    - engine_type: Tipo explícito (si no, se infiere automáticamente)
+#    - description: Descripción del motor (opcional)
+#    - timeout: Timeout en segundos (opcional)
+#    - default_depth/default_search_value: Valores por defecto
+#
+# 5. PARA AÑADIR NUEVOS MOTORES:
+#    - Copia una configuración similar
+#    - Ajusta los parámetros según el tipo
+#    - Recarga la configuración con POST /reload

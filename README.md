@@ -1,119 +1,366 @@
-# Plataforma de Ajedrez con Motores Externos
+# Chess Trainer - Sistema de Motores de Ajedrez
 
-## Objetivo
-Este proyecto tiene como objetivo construir una aplicación web que permita a los usuarios jugar partidas de ajedrez contra motores externos configurados a través de una API, o espectar partidas entre dos motores seleccionados. La configuración de los motores se realiza de manera declarativa utilizando archivos YAML.
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](docs/changelog/CAMBIOS_v2.0.0.md)
 
-## Arquitectura
-La aplicación se divide en dos componentes principales: Frontend y Backend.
+Sistema modular y extensible para trabajar con múltiples motores de ajedrez: tradicionales, neuronales y generativos.
 
-### Frontend (React.js)
-El frontend está construido con React.js y Vite, utilizando las siguientes librerías clave:
--   `chess.js`: Para la lógica de validación de movimientos y las reglas del ajedrez.
--   `react-chessboard`: Para el renderizado visual del tablero de ajedrez interactivo.
--   `react-router-dom`: Para la navegación entre las diferentes páginas de la aplicación.
+## 🎉 Nuevo en v2.0.0
 
-El frontend consta de dos páginas principales:
+**Refactorización completa** con arquitectura de protocolos:
+- ✨ **~500 líneas de código duplicado eliminadas**
+- 🏗️ **Sistema de protocolos** (UCI, REST, LocalLLM, APILLM)
+- 🎨 **Patrones Bridge + Composition** aplicados
+- 📦 **100% retrocompatible** con configuraciones existentes
+- 📚 **Documentación completa** de la nueva arquitectura
 
-1.  **Página de Selección (`/`)**:
-    -   Permite al usuario elegir uno o dos motores de ajedrez de una lista desplegable.
-    -   Opciones:
-        -   **Humano vs. Motor**: Seleccionar un motor contrincante y "Humano" en tu lugar.
-        -   **Motor A vs. Motor B**: Seleccionar dos motores para una partida automática.
-    -   Un botón "Empezar Partida" que navega a la página de juego.
+👉 **[Ver cambios completos](docs/changelog/CAMBIOS_v2.0.0.md)** | **[Documentación técnica](docs/architecture/REFACTORIZACION_PROTOCOLOS.md)** | **[Ejemplos de uso](docs/development/EJEMPLO_USO_PROTOCOLOS.md)**
 
-2.  **Página de Partida (`/game`)**:
-    -   Muestra un tablero interactivo (`react-chessboard`).
-    -   **Flujo Humano vs. Motor**: Las jugadas del humano se validan localmente con `chess.js` y se envían al backend para que el motor responda con su mejor movimiento.
-    -   **Flujo Motor vs. Motor**: El frontend consulta a ambos motores a un intervalo fijo (por ejemplo, 3 segundos por movimiento) y actualiza el tablero automáticamente.
+## 🚀 Características
 
-### Backend (Python, FastAPI)
-El backend está desarrollado en Python utilizando FastAPI, ofreciendo una API REST para interactuar con los motores de ajedrez. 
+- **Arquitectura Modular**: Soporta motores tradicionales (Stockfish), neuronales (LCZero) y generativos (GPT-4)
+- **API REST**: Interfaz unificada para todos los motores
+- **Extensible**: Añade nuevos motores sin modificar el código base
+- **Asíncrono**: Máxima performance con async/await
+- **Validación Inteligente**: Schema para motores tradicionales, Prompt parsing para LLMs
+- **Configuración YAML**: Gestión centralizada de motores
 
-**Endpoints**:
--   `POST /move`:
-    -   **Request**:
-        ```json
-        { "engine": "string", "fen": "string", "depth": int }
-        ```
-    -   **Response**:
-        ```json
-        { "bestmove": "string" }
-        ```
-    -   Este endpoint recibe el nombre del motor, la posición actual del tablero en formato FEN (Forsyth-Edwards Notation) y la profundidad de análisis, y devuelve el mejor movimiento sugerido por el motor.
--   `GET /`: Sirve el archivo `index.html` del frontend, actuando como un servidor de archivos estáticos para la aplicación React.
+## 📋 Tabla de Contenidos
 
-**Componentes Clave del Backend**:
--   `EngineInterface`: Un contrato común (clase abstracta) que todos los adaptadores de motor deben implementar. Define el método estándar `get_best_move(fen: str, depth: int) -> str`.
--   `EngineManager`: El punto central para gestionar los motores. Carga la configuración desde un archivo YAML, inicializa los adaptadores de motor apropiados (REST, UCI), y enruta las peticiones genéricas al adaptador correcto.
--   `RestEngineAdapter`: Un adaptador genérico para motores REST. Basado en la configuración declarativa en YAML, construye dinámicamente las llamadas HTTP (GET/POST) y extrae el mejor movimiento de la respuesta JSON utilizando `jsonpath`.
--   `UciEngineAdapter`: (Opcional) Un adaptador para motores UCI (Universal Chess Interface) locales, como Stockfish. Se comunica con el motor a través de un subproceso.
+- [Instalación](#instalación)
+- [Configuración](#configuración)
+- [Uso Rápido](#uso-rápido)
+- [Arquitectura](#arquitectura)
+- [API Endpoints](#api-endpoints)
+- [Tipos de Motores](#tipos-de-motores)
+- [Documentación](#documentación)
 
-## Configuración de Motores (YAML)
-Los motores se configuran en el archivo `config/engines.yaml` de forma declarativa. Cada entrada de motor define cómo conectarse y extraer información.
+## 🛠 Instalación
 
-**Ejemplo de `config/engines.yaml`**:
-```yaml
-engines:
-  lichess:
-    method: GET
-    url: "https://lichess.org/api/cloud-eval"
-    params: {"fen": "{fen}", "depth": "{depth}"}
-    extract: "pvs[0].moves"
-  stockfish-local:
-    type: uci
-    command: "stockfish"
-```
+### Requisitos Previos
 
-## Toma de Decisiones Tecnológicas
+- Python 3.9+
+- Stockfish (para motores UCI locales)
+- LCZero (opcional, para motores neuronales)
 
--   **Frontend (React + Vite)**: Se eligió React por su popularidad, ecosistema robusto y facilidad para construir interfaces de usuario interactivas. Vite se seleccionó como herramienta de construcción por su velocidad y eficiencia en el desarrollo. La decisión de cambiar de `chessboard2.js` a `react-chessboard` se tomó para una mejor integración con el paradigma de componentes de React y para evitar problemas de compatibilidad y manejo de estado, resultando en un código más limpio y fácil de mantener.
--   **Backend (FastAPI)**: FastAPI fue elegido por su alto rendimiento, facilidad de uso, y soporte nativo para la programación asíncrona (`async/await`), lo cual es ideal para manejar múltiples peticiones a motores externos concurrentemente. La validación de datos con Pydantic es una ventaja adicional.
--   **Configuración (YAML)**: El uso de YAML para la configuración de motores proporciona una forma flexible y declarativa de definir nuevos motores sin modificar el código del backend, facilitando la adición de nuevos motores o la adaptación a cambios en APIs existentes.
--   **Extracción de Datos (`jsonpath`)**: Se optó por la librería `jsonpath` para la extracción de datos de las respuestas JSON de los motores REST debido a su sintaxis intuitiva y su capacidad para navegar estructuras de datos complejas. Se migró de `jsonpath-ng` a `jsonpath` para resolver conflictos de importación que surgieron en el entorno de desarrollo.
--   **Contenedorización (Docker)**: La aplicación está diseñada para ser empaquetada en un `Dockerfile`, lo que facilita el despliegue en cualquier entorno que soporte contenedores. Esto asegura la portabilidad y la reproducibilidad del entorno de ejecución.
-
-## Funcionalidades de las Partes
-
--   **`main.py` (Backend)**: Contiene la instancia de la aplicación FastAPI, el `EngineManager` inicializado, y los endpoints de la API (`/` para servir el frontend y `/move` para gestionar las jugadas de ajedrez). También maneja la configuración de archivos estáticos para el frontend.
--   **`engine_manager.py` (Backend)**: Define la `EngineInterface` y la clase `EngineManager`. Es responsable de cargar y gestionar las configuraciones de los motores, instanciando los adaptadores (`RestEngineAdapter`, `UciEngineAdapter`) según el tipo de motor definido en el YAML. También contiene la lógica para delegar las peticiones a los adaptadores correctos.
--   **`config/engines.yaml` (Configuración)**: Almacena las definiciones de los motores de ajedrez externos. Cada motor se especifica con su método de conexión (GET/POST), URL, plantilla de parámetros y la ruta de extracción para el mejor movimiento.
--   **`frontend/src/App.jsx` (Frontend)**: Es el componente raíz de la aplicación React. Utiliza `react-router-dom` para gestionar la navegación, presentando la `SelectionPage` en la ruta `/` y la `GamePage` en `/game`.
--   **`frontend/src/GamePage.jsx` (Frontend)**: El componente principal que renderiza el tablero de ajedrez interactivo. Contiene la lógica para manejar las interacciones del usuario (movimientos de piezas), validar movimientos con `chess.js`, comunicarse con el backend para obtener movimientos de motor, y actualizar el estado y la posición del tablero.
--   **`frontend/src/SelectionPage.jsx` (Frontend)**: (Refactorizado de `App.jsx`) Un componente que permite a los usuarios seleccionar los motores de ajedrez para la partida y navegar a la `GamePage` con las opciones seleccionadas.
--   **`Dockerfile`**: Define cómo construir la imagen Docker de la aplicación, incluyendo la construcción del frontend, la instalación de dependencias del backend y la configuración del servidor Uvicorn para servir tanto los archivos estáticos del frontend como la API de FastAPI.
-
-## 🚀 Cómo Iniciar el Proyecto
-
-### Inicio Rápido
+### Pasos
 
 ```bash
-# Dar permisos de ejecución (solo la primera vez)
-chmod +x start.sh stop.sh
+# Clonar repositorio
+git clone <repo-url>
+cd chessTrainer
 
-# Iniciar la aplicación
-./start.sh
+# Crear entorno virtual
+python -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
 
-# Detener la aplicación
-./stop.sh
+# Instalar dependencias
+pip install -r requirements.txt
 ```
 
-La aplicación estará disponible en **http://localhost:5173**
+## ⚙️ Configuración
 
-### 📖 Documentación Completa
+Edita `config/engines.yaml` para configurar tus motores:
 
-Para instrucciones detalladas de despliegue, configuración de motores, y solución de problemas, consulta:
+```yaml
+engines:
+  # Motor tradicional UCI
+  stockfish-local:
+    engine_type: traditional_uci
+    type: uci
+    command: "stockfish"
+    default_depth: 15
 
-**👉 [DESPLIEGUE.md](DESPLIEGUE.md)**
+  # Motor neuronal
+  lc0-local:
+    engine_type: neuronal
+    protocol: uci
+    command: "lc0"
+    backend: "cuda"
 
-### Versiones Utilizadas
+  # Motor generativo (LLM)
+  gpt4-chess:
+    engine_type: generative
+    provider: openai
+    model: "gpt-4"
+    api_key: "YOUR_API_KEY"
+```
 
-- **chess.js**: 1.4.0 (versión estable más reciente)
-- **Python**: 3.10+
-- **Node.js**: 18+
-- **FastAPI**: 0.115.0+
-- **React**: 19.1+
+> **Nota**: Para motores generativos, necesitas añadir tu API key real.
 
-### Motores Disponibles
+## 🎮 Uso Rápido
 
-- **Lichess Cloud**: Motor online (solo posiciones populares)
-- **Stockfish Local**: Motor UCI local (requiere instalación)
+### Iniciar el Servidor
+
+```bash
+python main.py
+```
+
+El servidor estará disponible en `http://localhost:8000`
+
+### Ejemplos de Uso
+
+#### 1. Listar Motores Disponibles
+
+```bash
+curl http://localhost:8000/engines
+```
+
+#### 2. Obtener Mejor Movimiento (Stockfish)
+
+```bash
+curl -X POST http://localhost:8000/move \
+  -H "Content-Type: application/json" \
+  -d '{
+    "engine": "stockfish-local",
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "depth": 20
+  }'
+```
+
+#### 3. Obtener Movimiento con Explicación (LLM)
+
+```bash
+curl -X POST http://localhost:8000/move \
+  -H "Content-Type: application/json" \
+  -d '{
+    "engine": "gpt4-chess",
+    "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+    "strategy": "aggressive",
+    "explanation": true
+  }'
+```
+
+#### 4. Comparar Todos los Motores
+
+```bash
+curl -X POST http://localhost:8000/compare \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "depth": 15
+  }'
+```
+
+### Uso desde Python
+
+```python
+from engine_manager import EngineManager
+
+# Inicializar gestor
+manager = EngineManager("config/engines.yaml")
+
+# Obtener movimiento
+move = await manager.get_best_move(
+    "stockfish-local",
+    fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    depth=20
+)
+
+print(f"Mejor movimiento: {move}")
+```
+
+## 🏗 Arquitectura
+
+### Estructura del Proyecto
+
+```
+chessTrainer/
+├── engines/              # Módulo de motores
+│   ├── base.py          # Clase base y enums
+│   ├── validators.py    # Validadores (Schema y Prompt)
+│   ├── traditional.py   # Motores tradicionales
+│   ├── neuronal.py      # Motores neuronales
+│   ├── generative.py    # Motores generativos (LLM)
+│   └── factory.py       # Factory y Registry
+├── config/
+│   └── engines.yaml     # Configuración de motores
+├── docs/                # Documentación
+│   ├── ARQUITECTURA.md  # Arquitectura detallada
+│   └── motores_hibridos.md  # Motores híbridos (futuro)
+├── engine_manager.py    # Gestor de motores
+├── main.py             # API FastAPI
+└── requirements.txt    # Dependencias
+```
+
+### Patrones de Diseño
+
+- **Strategy**: Encapsular diferentes algoritmos de obtención de movimientos
+- **Factory Method**: Creación dinámica de motores desde configuración
+- **Registry**: Añadir nuevos tipos sin modificar código base
+- **Adapter**: Unificar APIs externas bajo interfaz común
+- **Template Method**: Hooks para inicialización/limpieza
+
+### Matriz de Clasificación
+
+| Tipo | Origen | Validación | Ejemplo |
+|------|--------|-----------|---------|
+| Traditional | Internal | Schema | Stockfish (UCI) |
+| Traditional | External | Schema | Lichess Cloud API |
+| Neuronal | Internal | Schema | Leela Chess Zero |
+| Neuronal | External | Schema | Servicio GPU remoto |
+| Generative | External | Prompt | GPT-4, Claude |
+| Generative | Internal | Prompt | LLM local (Ollama) |
+
+## 🌐 API Endpoints
+
+### Información
+
+- `GET /` - Información general de la API
+- `GET /health` - Estado de salud
+- `GET /engines` - Lista de motores disponibles
+- `GET /engines/info` - Información detallada de motores
+- `GET /engines/matrix` - Matriz de clasificación
+
+### Filtros
+
+- `GET /engines/filter/type/{type}` - Filtrar por tipo (traditional, neuronal, generative)
+- `GET /engines/filter/origin/{origin}` - Filtrar por origen (internal, external)
+
+### Operaciones
+
+- `POST /move` - Obtener mejor movimiento de un motor
+- `POST /compare` - Comparar sugerencias de todos los motores
+- `POST /reload` - Recargar configuración sin reiniciar
+
+## 🎯 Tipos de Motores
+
+### 1. Motores Tradicionales
+
+**Características**:
+- Algoritmos deterministas (minimax, alfa-beta)
+- Entrada: FEN
+- Salida: Movimiento UCI (ej: e2e4)
+- Validación: Schema estricto
+
+**Ejemplos**:
+- Stockfish (UCI local)
+- Lichess Cloud Analysis (REST API)
+- Komodo, Houdini
+
+### 2. Motores Neuronales
+
+**Características**:
+- Redes neuronales + búsqueda MCTS
+- Pueden requerir GPU
+- Usan "nodos" en vez de "profundidad"
+- Validación: Schema estricto
+
+**Ejemplos**:
+- Leela Chess Zero (LCZero)
+- AlphaZero
+- Servicios remotos con GPU
+
+### 3. Motores Generativos
+
+**Características**:
+- Basados en LLMs
+- Razonamiento en lenguaje natural
+- Pueden explicar decisiones
+- Validación: Parsing de texto
+
+**Ejemplos**:
+- GPT-4 Chess Assistant
+- Claude Chess
+- Modelos locales (LangChain, Ollama)
+
+## 📚 Documentación
+
+> 👉 **[Índice completo de documentación](docs/README.md)** - Navegación organizada por categorías
+
+### Documentación Detallada
+
+- [**ARQUITECTURA.md**](docs/architecture/ARQUITECTURA.md) - Arquitectura completa del sistema
+- [**motores_hibridos.md**](docs/architecture/motores_hibridos.md) - Motores híbridos (implementación futura)
+- [**patrones_diseño.md**](docs/architecture/patrones_diseño.md) - Patrones de diseño utilizados
+
+### Guías
+
+1. **Añadir un Nuevo Motor**
+   - Crear clase que herede de `MotorBase`
+   - Registrar en `EngineRegistry`
+   - Añadir configuración en `engines.yaml`
+   - Recargar con `POST /reload`
+
+2. **Configurar Motor LLM**
+   - Obtener API key del proveedor
+   - Añadir configuración en `engines.yaml`
+   - Personalizar `prompt_template` si es necesario
+
+3. **Desplegar en Producción**
+   - Ver [DESPLIEGUE.md](docs/deployment/DESPLIEGUE.md) para instrucciones
+
+## 🔧 Desarrollo
+
+### Ejecutar Tests
+
+```bash
+pytest
+```
+
+### Linting
+
+```bash
+flake8 engines/ engine_manager.py main.py
+```
+
+### Formato de Código
+
+```bash
+black engines/ engine_manager.py main.py
+```
+
+## 🤝 Contribuir
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📝 Roadmap
+
+- [x] Arquitectura base modular
+- [x] Motores tradicionales (UCI y REST)
+- [x] Motores neuronales
+- [x] Motores generativos (LLM)
+- [x] Sistema de Factory y Registry
+- [x] API REST completa
+- [ ] Tests unitarios completos
+- [ ] Motores híbridos (LLM + Tradicional)
+- [ ] Integración con LangGraph
+- [ ] Dashboard web interactivo
+- [ ] Análisis de partidas completas
+- [ ] Sistema de entrenamiento personalizado
+
+## 🐛 Problemas Conocidos
+
+- Los motores LLM requieren API keys válidas
+- LCZero puede requerir configuración adicional de GPU
+- Algunos motores externos tienen rate limits
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver archivo [LICENSE](LICENSE) para más detalles.
+
+## 👥 Autores
+
+- Chess Trainer Team
+
+## 🙏 Agradecimientos
+
+- [Stockfish](https://stockfishchess.org/) - Motor de ajedrez open source
+- [Leela Chess Zero](https://lczero.org/) - Motor neuronal open source
+- [python-chess](https://python-chess.readthedocs.io/) - Librería de ajedrez
+- [FastAPI](https://fastapi.tiangolo.com/) - Framework web moderno
+
+---
+
+**Versión**: 2.0.0  
+**Última actualización**: 2025
+
+Para más información, consulta la [documentación completa](docs/architecture/ARQUITECTURA.md).
