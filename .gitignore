@@ -7,11 +7,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Process IDs
+*.pid
+
 # Node modules (works for both root and frontend/)
 node_modules
 dist
 dist-ssr
 *.local
+
+# Backend folders (ignorado en rama frontend)
+engines/
 
 # Python cache (for backend)
 __pycache__/

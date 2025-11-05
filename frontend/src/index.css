@@ -17,6 +17,7 @@
 
 body {
   font-family: 'VT323', monospace;
+  font-size: 24px;
   background: var(--retro-bg);
   color: var(--retro-green);
   overflow: hidden;
@@ -95,9 +96,9 @@ body::after {
 /* Efecto de resplandor en textos */
 .glow {
   text-shadow: 
-    0 0 3px var(--retro-glow),
-    0 0 6px var(--retro-glow),
-    0 0 9px var(--retro-glow);
+    0 0 4.5px var(--retro-glow),
+    0 0 9px var(--retro-glow),
+    0 0 13.5px var(--retro-glow);
 }
 
 /* Aplicar glow suave a todos los elementos con texto */
@@ -113,9 +114,9 @@ button,
 select,
 option {
   text-shadow: 
-    0 0 3px var(--retro-glow),
-    0 0 6px var(--retro-glow),
-    0 0 9px var(--retro-glow);
+    0 0 4.5px var(--retro-glow),
+    0 0 9px var(--retro-glow),
+    0 0 13.5px var(--retro-glow);
 }
 
 /* Blinking cursor animation */
