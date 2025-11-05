@@ -8,6 +8,8 @@ Sistema completo de entrenamiento de ajedrez con backend FastAPI y frontend Reac
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](docs/changelog/CAMBIOS_v2.0.0.md)
 
+![Vista de la interfaz](docs/images/interface_view.png)
+
 ## 🎉 Nuevo en v2.0.0
 
 **Refactorización completa** con arquitectura de protocolos:

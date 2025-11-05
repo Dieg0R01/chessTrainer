@@ -32,6 +32,8 @@ lerna-debug.log*
 
 # Process IDs
 *.pid
+.backend.pid
+.backend_script.path
 
 # OS
 .DS_Store
