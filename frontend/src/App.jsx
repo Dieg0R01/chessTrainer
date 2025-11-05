@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import GamePage from './GamePage'; // Vamos a crear este archivo
+import GamePage from './GamePage';
 
 function SelectionPage() {
   const [selectedEngineA, setSelectedEngineA] = useState("");
@@ -32,6 +32,20 @@ function SelectionPage() {
     <div className="retro-container">
       {/* Terminal header */}
       <div className="terminal-header">
+        <div className="chess-logo-container">
+          <img 
+            src="/chess_image.svg" 
+            alt="Chess Logo" 
+            className="chess-logo"
+            style={{ 
+              width: '321px', 
+              height: 'auto', 
+              maxWidth: '321px', 
+              margin: '0 auto',
+              display: 'block'
+            }}
+          />
+        </div>
         <div className="terminal-title glow">
           ═══════════════════════════════════════
         </div>
