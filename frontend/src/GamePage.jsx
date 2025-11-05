@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
@@ -9,8 +9,9 @@ function GamePage() {
   const gameRef = useRef(new Chess());
   const [position, setPosition] = useState(gameRef.current.fen());
   const [status, setStatus] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const updateStatus = () => {
+  const updateStatus = useCallback(() => {
     const game = gameRef.current;
     let currentStatus = "";
     let moveColor = game.turn() === 'w' ? "Blancas" : "Negras";
@@ -26,19 +27,21 @@ function GamePage() {
       }
     }
     setStatus(currentStatus);
-  };
+  }, []);
 
   useEffect(() => {
     console.log("GamePage montado.");
     console.log("Motor A seleccionado:", selectedEngineA);
     console.log("Motor B seleccionado:", selectedEngineB);
     updateStatus();
-  }, []);
+  }, [updateStatus]);
 
-  const makeEngineMove = async (engineName) => {
+  const makeEngineMove = useCallback(async (engineName) => {
+    if (isProcessing) return; // Evitar múltiples llamadas simultáneas
+    
+    setIsProcessing(true);
     try {
       const game = gameRef.current;
-      // Obtener la URL del backend dinámicamente basándose en la URL actual
       const backendUrl = window.location.origin.replace(':5173', ':8000');
       const response = await fetch(`${backendUrl}/move`, {
         method: 'POST',
@@ -71,11 +74,15 @@ function GamePage() {
     } catch (error) {
       console.error("Error al obtener movimiento del motor:", error);
       setStatus(`Error: No se pudo conectar con el motor ${engineName}. La posición puede no estar en la base de datos de Lichess.`);
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, [isProcessing, updateStatus]);
 
-  function onPieceDrop(sourceSquare, targetSquare) {
+  const onPieceDrop = useCallback((sourceSquare, targetSquare) => {
     console.log("onPieceDrop llamado:", sourceSquare, "->", targetSquare);
+    
+    if (isProcessing) return false; // Evitar movimientos durante procesamiento
     
     try {
       const game = gameRef.current;
@@ -87,29 +94,54 @@ function GamePage() {
 
       console.log("Resultado del movimiento:", move);
       console.log("Movimiento VÁLIDO - Actualizando estado");
+      
+      // Actualizar posición inmediatamente
       setPosition(game.fen());
       
-      // Actualizar status después de un breve delay
-      setTimeout(() => {
-        updateStatus();
+      // Actualizar status de forma síncrona
+      updateStatus();
+      
+      // Programar movimiento del motor si es necesario
+      const needsEngineMove = (selectedEngineA === 'human' && selectedEngineB !== 'none') || 
+                             (selectedEngineA !== 'human' && selectedEngineB === 'none');
+      
+      if (needsEngineMove) {
+        const engineToMove = selectedEngineA === 'human' ? selectedEngineB : selectedEngineA;
+        console.log("Solicitando movimiento del motor:", engineToMove);
         
-        // Si es humano vs motor, hacer que el motor juegue
-        if (selectedEngineA === 'human' && selectedEngineB !== 'none') {
-          console.log("Solicitando movimiento del motor:", selectedEngineB);
-          makeEngineMove(selectedEngineB);
-        } else if (selectedEngineA !== 'human' && selectedEngineB === 'none') {
-          console.log("Solicitando movimiento del motor:", selectedEngineA);
-          makeEngineMove(selectedEngineA);
-        }
-      }, 50);
+        // Usar setTimeout para evitar bloqueo del hilo principal
+        setTimeout(() => {
+          makeEngineMove(engineToMove);
+        }, 100);
+      }
 
       return true;
     } catch (error) {
-      // En chess.js v1.4.0, los movimientos ilegales lanzan excepciones
       console.log("Movimiento ILEGAL:", error.message);
       return false;
     }
-  }
+  }, [isProcessing, updateStatus, makeEngineMove, selectedEngineA, selectedEngineB]);
+
+  // Memoizar el componente Chessboard para evitar re-renders innecesarios
+  const memoizedChessboard = useMemo(() => (
+    <Chessboard
+      position={position}
+      onPieceDrop={onPieceDrop}
+      customBoardStyle={{
+        borderRadius: '0px',
+        boxShadow: 'none',
+        width: '100%',
+        height: '100%'
+      }}
+      customLightSquareStyle={{
+        backgroundColor: '#24a32a'
+      }}
+      customDarkSquareStyle={{
+        backgroundColor: '#147e1f'
+      }}
+      boardWidth={600}
+    />
+  ), [position, onPieceDrop]);
 
   console.log("Renderizando GamePage, FEN:", position);
 
@@ -144,6 +176,11 @@ function GamePage() {
               <div className="status-line">
                 <span className="blink">&gt;</span> ENGINE B: {selectedEngineB === "none" ? "HUMANO" : selectedEngineB}
               </div>
+              {isProcessing && (
+                <div className="status-line">
+                  <span className="blink">&gt;</span> PROCESSING: ENGINE THINKING...
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -152,20 +189,7 @@ function GamePage() {
         <div className="board-container">
           <div className="board-frame">
             <div className="board-inner">
-              <Chessboard
-                position={position}
-                onPieceDrop={onPieceDrop}
-                customBoardStyle={{
-                  borderRadius: '0px',
-                  boxShadow: 'none'
-                }}
-                customLightSquareStyle={{
-                  backgroundColor: '#1a5c1a'
-                }}
-                customDarkSquareStyle={{
-                  backgroundColor: '#0a3d0a'
-                }}
-              />
+              {memoizedChessboard}
             </div>
             <div className="board-label glow">CHESS.SYS v2.1</div>
           </div>
