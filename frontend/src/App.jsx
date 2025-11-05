@@ -1,26 +1,49 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import GamePage from './GamePage';
+import { fetchEngines } from './api';
 
 function SelectionPage() {
   const [selectedEngineA, setSelectedEngineA] = useState("");
   const [selectedEngineB, setSelectedEngineB] = useState("none"); // 'none' para jugar contra humano
   const [availableEngines, setAvailableEngines] = useState([]);
+  const [isLoadingEngines, setIsLoadingEngines] = useState(true);
+  const [engineError, setEngineError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Obtener los motores disponibles del backend
-    // Obtener la URL del backend dinámicamente basándose en la URL actual
-    const backendUrl = window.location.origin.replace(':5173', ':8000');
-    fetch(`${backendUrl}/engines`)
-      .then(response => response.json())
-      .then(data => {
-        setAvailableEngines(data.engines);
+    console.log('🚀 Iniciando carga de motores...');
+    setIsLoadingEngines(true);
+    setEngineError(null);
+    
+    fetchEngines()
+      .then(engines => {
+        console.log('✅ Motores cargados exitosamente:', engines);
+        setAvailableEngines(engines);
+        setIsLoadingEngines(false);
+        if (engines.length === 0) {
+          setEngineError('No se encontraron motores disponibles en el backend');
+        }
       })
       .catch(error => {
-        console.error("Error al obtener los motores:", error);
-        // En caso de error, usar una lista vacía
+        console.error("❌ Error al obtener los motores:", error);
+        
         setAvailableEngines([]);
+        setIsLoadingEngines(false);
+        
+        // Mensaje de error más específico según el tipo
+        let errorMessage = 'Error desconocido al conectar con el backend';
+        
+        if (error.name === 'ConnectionError' || error.message.includes('No se pudo conectar')) {
+          errorMessage = '⚠️ Backend no disponible. Asegúrate de iniciar el servidor en http://localhost:8000';
+        } else if (error.message.includes('Error del servidor')) {
+          errorMessage = `⚠️ Error del servidor: ${error.message}`;
+        } else {
+          errorMessage = `⚠️ Error: ${error.message}`;
+        }
+        
+        setEngineError(errorMessage);
       });
   }, []);
 
@@ -145,8 +168,16 @@ function SelectionPage() {
               <div className="move-history">
                 <div className="history-title glow">▼ ENGINE INFO:</div>
                 <div className="history-content">
-                  {availableEngines.length === 0 ? (
+                  {isLoadingEngines ? (
                     <div className="history-item blink">_ CARGANDO MOTORES...</div>
+                  ) : engineError ? (
+                    <div className="history-item" style={{ color: '#ff4444' }}>
+                      ⚠ {engineError}
+                    </div>
+                  ) : availableEngines.length === 0 ? (
+                    <div className="history-item" style={{ color: '#ffaa00' }}>
+                      ⚠ NO HAY MOTORES DISPONIBLES
+                    </div>
                   ) : (
                     availableEngines.map((engine, index) => (
                       <div key={index} className="history-item">

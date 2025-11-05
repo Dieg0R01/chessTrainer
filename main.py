@@ -6,7 +6,7 @@ Proporciona endpoints para interactuar con múltiples motores de ajedrez.
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from engine_manager import EngineManager
 from engines import MotorType, MotorOrigin
 from fastapi.staticfiles import StaticFiles
@@ -20,6 +20,38 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Configuración de CORS óptima
+def get_cors_origins() -> List[str]:
+    """
+    Obtiene los orígenes permitidos para CORS.
+    En desarrollo permite localhost con diferentes puertos.
+    En producción usa variable de entorno o lista específica.
+    """
+    # Obtener orígenes desde variable de entorno si existe
+    cors_origins_env = os.getenv("CORS_ORIGINS")
+    if cors_origins_env:
+        return [origin.strip() for origin in cors_origins_env.split(",")]
+    
+    # En desarrollo, permitir localhost con diferentes puertos comunes
+    is_production = os.getenv("ENVIRONMENT") == "production"
+    
+    if not is_production:
+        # Desarrollo: permitir localhost en puertos comunes
+        return [
+            "http://localhost:5173",  # Vite dev server
+            "http://localhost:3000",  # React dev server común
+            "http://localhost:8080",  # Otro puerto común
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:8080",
+        ]
+    
+    # Producción: solo orígenes específicos (configurar según tu dominio)
+    return [
+        "https://tudominio.com",
+        "https://www.tudominio.com",
+    ]
 
 
 # Modelos Pydantic
@@ -62,14 +94,32 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# Configurar CORS
+# Configurar CORS de manera óptima
+cors_origins = get_cors_origins()
+logger.info(f"CORS configurado para orígenes: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],  # Solo métodos necesarios
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+    ],  # Solo headers necesarios
+    expose_headers=["Content-Type"],  # Headers que el frontend puede leer
+    max_age=3600,  # Cache de preflight requests por 1 hora
 )
+
+# Log de inicio para debugging
+logger.info("=" * 50)
+logger.info("Chess Trainer API iniciando...")
+logger.info(f"Backend URL: http://0.0.0.0:8000")
+logger.info(f"CORS permitiendo orígenes: {cors_origins}")
+logger.info("=" * 50)
 
 # Inicializar gestor de motores
 engine_manager = EngineManager()
@@ -149,12 +199,23 @@ async def get_engines():
     """Lista todos los motores disponibles"""
     try:
         engines = engine_manager.list_engines()
-        return {
+        logger.info(f"Listando {len(engines)} motores disponibles")
+        
+        # Asegurar que engines es una lista
+        if not isinstance(engines, list):
+            logger.warning(f"list_engines() no retornó una lista, convirtiendo...")
+            engines = list(engines) if engines else []
+        
+        response = {
             "engines": engines,
             "count": len(engines)
         }
+        
+        logger.debug(f"Respuesta /engines: {response}")
+        return response
+        
     except Exception as e:
-        logger.error(f"Error listando motores: {e}")
+        logger.error(f"Error listando motores: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -15,6 +15,16 @@ else
     echo "   ⚠️  Backend no estaba corriendo o ya fue detenido"
 fi
 
+# Limpiar scripts temporales si existen
+if [ -f .backend_script.path ]; then
+    BACKEND_SCRIPT_PATH=$(cat .backend_script.path 2>/dev/null)
+    if [ -n "$BACKEND_SCRIPT_PATH" ] && [ -f "$BACKEND_SCRIPT_PATH" ]; then
+        rm -f "$BACKEND_SCRIPT_PATH"
+        echo "   ✅ Script temporal eliminado"
+    fi
+    rm -f .backend_script.path .backend.pid 2>/dev/null || true
+fi
+
 # Detener frontend
 echo "🎨 Deteniendo Frontend..."
 pkill -f "vite"
