@@ -3,7 +3,21 @@
 # Script para iniciar frontend y abrir navegador
 echo "🎨 Iniciando Frontend..."
 
-# Activar entorno de conda chess
+# 1. Primero detener cualquier instancia previa
+echo "🧹 Limpiando procesos previos..."
+if [ -f "stop_frontend.sh" ]; then
+    bash stop_frontend.sh 2>/dev/null
+else
+    # Limpiar puerto 5173 manualmente si no existe el script
+    PIDS=$(lsof -ti :5173 2>/dev/null)
+    if [ -n "$PIDS" ]; then
+        echo "🔍 Matando procesos previos en puerto 5173..."
+        kill -9 $PIDS 2>/dev/null
+    fi
+fi
+sleep 1
+
+# 2. Activar entorno de conda chess
 echo "🐍 Activando entorno conda 'chess'..."
 
 # Intentar diferentes ubicaciones de conda
@@ -63,12 +77,29 @@ fi
 
 echo "✅ Entorno conda 'chess' activado correctamente"
 
-# Cambiar al directorio frontend
+# 3. Cambiar al directorio frontend
 cd frontend
 
-# Iniciar Vite en segundo plano
+# 4. Verificar e instalar dependencias si es necesario
+if [ ! -d "node_modules" ]; then
+    echo "📦 Dependencias no encontradas. Instalando..."
+    npm install
+    if [ $? -ne 0 ]; then
+        echo "❌ Error al instalar dependencias"
+        exit 1
+    fi
+    echo "✅ Dependencias instaladas"
+else
+    echo "✓ Dependencias ya instaladas"
+fi
+
+# 5. Iniciar Vite en segundo plano
+echo "🚀 Iniciando servidor Vite..."
 npm run dev -- --host > ../logs_frontend.log 2>&1 &
 VITE_PID=$!
+
+# Guardar PID en archivo
+echo $VITE_PID > ../.frontend.pid
 
 echo "📦 Vite iniciado con PID: $VITE_PID"
 echo "⏳ Esperando que el servidor esté listo..."
@@ -88,8 +119,12 @@ open http://localhost:5173
 
 echo ""
 echo "🎉 Frontend iniciado correctamente!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🌐 URL: http://localhost:5173"
+echo "📦 PID: $VITE_PID (guardado en .frontend.pid)"
 echo "📋 Logs: tail -f logs_frontend.log"
-echo "🛑 Para detener: usa el botón Detener"
+echo "🛑 Para detener: bash stop_frontend.sh"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 # Mantener el script corriendo para mostrar logs

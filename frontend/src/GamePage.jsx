@@ -139,7 +139,7 @@ function GamePage() {
       customDarkSquareStyle={{
         backgroundColor: '#147e1f'
       }}
-      boardWidth={400}
+      boardWidth={600}
     />
   ), [position, onPieceDrop]);
 
