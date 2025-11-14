@@ -21,10 +21,20 @@ class LocalLLMProtocol(ProtocolBase):
         Inicializa el protocolo para LLM local.
         
         Args:
-            config: Debe incluir 'endpoint' o usar default localhost
+            config: Debe incluir 'endpoint' (obligatorio)
         """
         super().__init__(config)
-        self.endpoint = config.get("endpoint", "http://localhost:8080")
+        
+        # Propiedad crítica: debe estar en configuración
+        self.endpoint = config.get("endpoint")
+        
+        if not self.endpoint:
+            raise ValueError(
+                "LocalLLMProtocol requiere 'endpoint' en configuración. "
+                "Ejemplo: 'http://localhost:8080'"
+            )
+        
+        # Propiedades no críticas: pueden tener valores por defecto
         self.timeout = config.get("timeout", 60.0)  # Mayor timeout para LLMs
         self.model_path = config.get("model_path")
         

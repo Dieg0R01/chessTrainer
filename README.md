@@ -147,24 +147,63 @@ curl -X POST http://localhost:8000/compare \
 
 ## ⚙️ Configuración
 
-Edita `config/engines.yaml` para configurar tus motores:
+La configuración de motores está dividida en dos archivos:
+
+- **`config/engines_local.yaml`**: Motores locales (no requieren tokens de API)
+- **`config/engines_external.yaml`**: Motores externos (requieren tokens de API)
+
+### Motores Locales (`engines_local.yaml`)
 
 ```yaml
 engines:
-  # Motor tradicional UCI
+  # Motor tradicional UCI local
   stockfish-local:
     engine_type: traditional_uci
     type: uci
     command: "stockfish"
     default_depth: 15
+```
 
-  # Motor generativo (LLM)
-  gpt4-chess:
+### Motores Externos (`engines_external.yaml`)
+
+```yaml
+engines:
+  # Motor generativo (LLM) - Usa variables de entorno para API keys
+  gpt-4o-mini:
     engine_type: generative
     provider: openai
-    model: "gpt-4"
-    api_key: "YOUR_API_KEY"
+    model: "gpt-4o-mini"
+    # api_key se lee automáticamente desde variable de entorno OPENAI_API_KEY
 ```
+
+**Nota**: El sistema carga ambos archivos automáticamente. Los motores están organizados por tipo (tradicionales, neuronales, generativos) dentro de cada archivo.
+
+### Configuración de API Keys
+
+Las API keys se configuran mediante variables de entorno para mayor seguridad:
+
+1. **Copia el archivo de ejemplo**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edita `.env`** y añade tus API keys:
+   ```bash
+   OPENAI_API_KEY=sk-tu-api-key-aqui
+   ```
+
+3. **El sistema busca las API keys en este orden**:
+   - `{PROVIDER}_API_KEY` (ej: `OPENAI_API_KEY`)
+   - `{ENGINE_NAME}_API_KEY` (ej: `GPT_4O_MINI_API_KEY`)
+   - `API_KEY` (genérico)
+
+**Modelos GPT gratuitos disponibles**:
+- `gpt-4o-mini` - Velocidad promedio
+- `gpt-3.5-turbo-0125`
+- `gpt-3.5-turbo-1106`
+- `gpt-3.5-turbo` - Versión estándar
+- `gpt-3.5-turbo-16k` - Contexto extendido
+- `net-gpt-3.5-turbo` - Con búsqueda en red (menos estable)
 
 ## 🏗 Arquitectura
 
@@ -187,7 +226,8 @@ chessTrainer/
 │   ├── package.json
 │   └── vite.config.js
 ├── config/
-│   └── engines.yaml     # Configuración de motores
+│   ├── engines_local.yaml     # Motores locales (sin API keys)
+│   └── engines_external.yaml  # Motores externos (con API keys)
 ├── docs/                # Documentación
 ├── engine_manager.py    # Gestor de motores
 ├── main.py             # API FastAPI

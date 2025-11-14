@@ -9,6 +9,8 @@ httpx>=0.27.0
 
 # Configuración
 PyYAML>=6.0.2
+python-dotenv>=1.0.0
+Jinja2>=3.1.0
 
 # JSON Path para parsing de APIs REST
 jsonpath>=0.82.2

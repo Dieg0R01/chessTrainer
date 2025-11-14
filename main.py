@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from engine_manager import EngineManager
 from engines import MotorType, MotorOrigin
+from engines.generative import get_valid_strategies, get_strategy_info
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 import os
@@ -61,7 +62,10 @@ class MoveRequest(BaseModel):
     fen: str = Field(..., description="Posición del tablero en formato FEN")
     depth: Optional[int] = Field(None, description="Profundidad de análisis")
     move_history: Optional[str] = Field("", description="Histórico de movimientos (para motores generativos)")
-    strategy: Optional[str] = Field("balanced", description="Estrategia (para motores generativos)")
+    strategy: Optional[str] = Field(
+        None, 
+        description="Estrategia de juego (para motores generativos, opcional). El modelo elegirá automáticamente después de 4 movimientos. Opciones: balanced, aggressive, defensive, tactical, positional, material, king_safety"
+    )
     explanation: Optional[bool] = Field(False, description="Solicitar explicación (motores generativos)")
 
 
@@ -179,6 +183,7 @@ async def api_info():
             "GET /engines/matrix": "Matriz de clasificación de motores",
             "POST /move": "Obtener mejor movimiento de un motor",
             "POST /compare": "Comparar sugerencias de todos los motores",
+            "GET /strategies": "Lista de estrategias disponibles para motores generativos",
             "GET /health": "Estado de salud de la API"
         }
     }
@@ -320,15 +325,36 @@ async def get_best_move(move_request: MoveRequest):
     
     Soporta parámetros adicionales para motores generativos:
     - move_history: Histórico de movimientos
-    - strategy: Estrategia deseada
+    - strategy: Estrategia deseada (balanced, aggressive, defensive, tactical, positional, material, king_safety)
     - explanation: Solicitar explicación del movimiento
+    
+    Estrategias disponibles:
+    - balanced: Equilibrio entre táctica y posición (por defecto)
+    - aggressive: Juego agresivo, busca ataque y combinaciones
+    - defensive: Juego defensivo, prioriza seguridad
+    - tactical: Enfoque en combinaciones y tácticas
+    - positional: Enfoque en estructura y planes a largo plazo
+    - material: Prioriza ganancia de material
+    - king_safety: Prioriza seguridad del rey
     """
     try:
         # Preparar kwargs para el motor
         kwargs = {}
         if move_request.move_history:
             kwargs["move_history"] = move_request.move_history
+            logger.info(f"📜 Historial recibido para motor {move_request.engine}: {move_request.move_history[:100]}...")
+        else:
+            logger.warning(f"⚠️ No se recibió historial de movimientos para motor {move_request.engine}")
+        # La estrategia ahora es opcional - el modelo la elegirá automáticamente después de 4 movimientos
         if move_request.strategy:
+            # Validar estrategia si se proporciona explícitamente
+            valid_strategies = get_valid_strategies()
+            if move_request.strategy.lower() not in [s.lower() for s in valid_strategies]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Estrategia inválida: '{move_request.strategy}'. "
+                           f"Estrategias válidas: {', '.join(valid_strategies)}"
+                )
             kwargs["strategy"] = move_request.strategy
         if move_request.explanation:
             kwargs["explanation"] = move_request.explanation
@@ -364,6 +390,33 @@ async def get_best_move(move_request: MoveRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error obteniendo movimiento: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/strategies")
+async def get_strategies():
+    """
+    Obtiene la lista de estrategias disponibles para motores generativos.
+    """
+    try:
+        valid_strategies = get_valid_strategies()
+        strategies_info = {}
+        
+        for strategy_name in valid_strategies:
+            info = get_strategy_info(strategy_name)
+            strategies_info[strategy_name] = {
+                "name": info.get("name", strategy_name),
+                "description": info.get("description", ""),
+                "prompt_hint": info.get("prompt_hint", "")
+            }
+        
+        return {
+            "strategies": strategies_info,
+            "count": len(valid_strategies),
+            "default": "balanced"
+        }
+    except Exception as e:
+        logger.error(f"Error obteniendo estrategias: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

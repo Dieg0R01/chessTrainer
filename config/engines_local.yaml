@@ -1,0 +1,77 @@
+# Configuración de motores de ajedrez LOCALES
+# Motores que se ejecutan localmente sin requerir tokens de API externos
+
+engines:
+  # ============================================================================
+  # MOTORES TRADICIONALES - DETERMINISTAS (LOCALES)
+  # ============================================================================
+  
+  # Motor UCI local: Stockfish
+  stockfish-local:
+    engine_type: traditional_uci
+    type: uci
+    command: "stockfish"
+    default_depth: 15
+    description: "Stockfish - Motor determinista local vía UCI"
+  
+  # ============================================================================
+  # MOTORES NEURONALES (LOCALES)
+  # ============================================================================
+  
+  # Leela Chess Zero (LCZero) - Local UCI
+  lc0-local:
+    engine_type: neuronal
+    protocol: uci
+    command: "lc0"
+    # weights: "/path/to/weights/file.pb.gz"  # Opcional: archivo de pesos
+    backend: "auto"  # auto, cuda, cudnn, opencl, blas, etc.
+    search_mode: "nodes"  # nodes, depth, time
+    default_search_value: 800000  # Número de nodos para evaluar
+    description: "Leela Chess Zero - Motor neuronal local"
+  
+  # ============================================================================
+  # MOTORES GENERATIVOS - LLMs (LOCALES)
+  # ============================================================================
+  
+  # Modelo LLM local (ejemplo: Ollama, LM Studio, etc.)
+  # llm-local:
+  #   engine_type: generative
+  #   provider: local
+  #   endpoint: "http://localhost:8080"
+  #   model_path: "/path/to/model"
+  #   temperature: 0.3
+  #   max_tokens: 500
+  #   description: "Modelo LLM local"
+
+# ============================================================================
+# NOTAS DE CONFIGURACIÓN - MOTORES LOCALES
+# ============================================================================
+#
+# Estos motores se ejecutan localmente y NO requieren tokens de API.
+# 
+# 1. MOTORES TRADICIONALES LOCALES:
+#    - UCI: Requieren 'command' (ejecutable del motor instalado localmente)
+#    - Ejemplo: Stockfish debe estar instalado en el sistema
+#
+# 2. MOTORES NEURONALES LOCALES:
+#    - UCI: Similar a tradicionales pero con opciones adicionales (weights, backend)
+#    - Requieren el ejecutable del motor neuronal instalado localmente
+#    - Pueden usar 'nodes' en vez de 'depth'
+#
+# 3. MOTORES GENERATIVOS LOCALES:
+#    - Local: Requieren 'endpoint' o 'model_path' apuntando a servicio local
+#    - Ejemplos: Ollama, LM Studio, servidores LLM locales
+#    - NO requieren api_key ya que son servicios locales
+#
+# 4. PARÁMETROS COMUNES:
+#    - engine_type: Tipo explícito (si no, se infiere automáticamente)
+#    - description: Descripción del motor (opcional)
+#    - timeout: Timeout en segundos (opcional)
+#    - default_depth/default_search_value: Valores por defecto
+#
+# 5. PARA AÑADIR NUEVOS MOTORES LOCALES:
+#    - Copia una configuración similar
+#    - Ajusta los parámetros según el tipo
+#    - Asegúrate de que el ejecutable/servicio esté disponible localmente
+#    - Recarga la configuración con POST /reload
+

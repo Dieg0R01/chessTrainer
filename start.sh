@@ -165,8 +165,14 @@ sleep 1
 # Obtener ruta absoluta del proyecto
 PROJECT_DIR=$(pwd)
 
+# Limpiar scripts temporales anteriores
+rm -f /tmp/chess_trainer_backend_*.sh 2>/dev/null || true
+
 # Crear script temporal para iniciar backend con entorno conda
-BACKEND_SCRIPT=$(mktemp /tmp/chess_trainer_backend_XXXXXX.sh)
+# Usar timestamp y PID para asegurar unicidad
+TIMESTAMP=$(date +%s)
+BACKEND_SCRIPT="/tmp/chess_trainer_backend_${TIMESTAMP}_$$.sh"
+
 cat > "$BACKEND_SCRIPT" << EOF
 #!/bin/bash
 source "\$(conda info --base)/etc/profile.d/conda.sh"
@@ -174,11 +180,19 @@ conda activate chess
 cd "$PROJECT_DIR"
 exec uvicorn main:app --reload --host 0.0.0.0 --port 8000
 EOF
+
+# Verificar que el archivo se creó correctamente
+if [ ! -f "$BACKEND_SCRIPT" ]; then
+    echo "❌ Error: No se pudo crear el script temporal del backend"
+    exit 1
+fi
+
 chmod +x "$BACKEND_SCRIPT"
 
-# Iniciar backend en segundo plano con el script
-"$BACKEND_SCRIPT" > logs_backend.log 2>&1 &
+# Iniciar backend en segundo plano con el script (usando nohup para independencia)
+nohup "$BACKEND_SCRIPT" > logs_backend.log 2>&1 &
 BACKEND_PID=$!
+disown $BACKEND_PID 2>/dev/null || true
 
 # Guardar el PID del script también para limpieza
 echo "$BACKEND_PID" > .backend.pid
@@ -193,11 +207,21 @@ echo ""
 # Esperar un poco para que el backend inicie
 sleep 2
 
-# Iniciar frontend en segundo plano
+# Iniciar frontend en segundo plano (usando nohup para independencia)
 echo -e "${BLUE}🎨 Iniciando Frontend (Vite)...${NC}"
 cd frontend
-npm run dev -- --host > ../logs_frontend.log 2>&1 &
+# Iniciar npm en segundo plano con nohup y redirección
+nohup npm run dev -- --host > ../logs_frontend.log 2>&1 &
 FRONTEND_PID=$!
+# Esperar un momento para que el proceso inicie
+sleep 2
+# Obtener el PID real del proceso vite (puede ser el proceso hijo)
+VITE_PID=$(pgrep -f "vite.*--host" | head -1)
+if [ -n "$VITE_PID" ]; then
+    FRONTEND_PID=$VITE_PID
+fi
+# Desvincular el proceso del shell actual
+disown $FRONTEND_PID 2>/dev/null || true
 cd ..
 echo "   Frontend PID: $FRONTEND_PID"
 echo "   URL Local: http://localhost:5173"

@@ -1,0 +1,49 @@
+# Estrategias de ajedrez disponibles para motores generativos
+# Estas estrategias guían el estilo de juego del LLM
+
+strategies:
+  balanced:
+    name: "Equilibrado"
+    description: "Equilibrio entre táctica y posición. Busca el mejor movimiento considerando todos los aspectos del juego."
+    prompt_hint: "Juega de forma equilibrada, considerando tanto aspectos tácticos como posicionales."
+  
+  aggressive:
+    name: "Agresivo"
+    description: "Juego agresivo que busca ataque y combinaciones. Prioriza iniciativas y amenazas sobre seguridad."
+    prompt_hint: "Juega de forma agresiva, busca ataques y combinaciones. Prioriza la iniciativa sobre la seguridad."
+  
+  defensive:
+    name: "Defensivo"
+    description: "Juego defensivo que prioriza la seguridad. Evita riesgos y fortalece la posición propia."
+    prompt_hint: "Juega de forma defensiva, prioriza la seguridad y la solidez de tu posición. Evita riesgos innecesarios."
+  
+  tactical:
+    name: "Táctico"
+    description: "Enfoque en combinaciones y tácticas. Busca oportunidades tácticas inmediatas y calcula variantes."
+    prompt_hint: "Enfócate en aspectos tácticos: combinaciones, amenazas, y cálculo de variantes. Busca oportunidades tácticas inmediatas."
+  
+  positional:
+    name: "Posicional"
+    description: "Enfoque en estructura y planes a largo plazo. Prioriza casillas débiles, estructura de peones y desarrollo."
+    prompt_hint: "Enfócate en aspectos posicionales: estructura de peones, casillas débiles/fuertes, planes a largo plazo y desarrollo de piezas."
+  
+  material:
+    name: "Material"
+    description: "Prioriza la ganancia de material. Busca capturas y ventajas materiales sobre consideraciones posicionales."
+    prompt_hint: "Prioriza la ganancia de material. Busca capturas y ventajas materiales, incluso si sacrificas aspectos posicionales."
+  
+  king_safety:
+    name: "Seguridad del Rey"
+    description: "Prioriza la seguridad del rey propio y busca debilidades en la seguridad del rey enemigo."
+    prompt_hint: "Prioriza la seguridad de tu rey y busca debilidades en la seguridad del rey enemigo. Fortalece tu enroque y ataca el enroque contrario."
+
+# Descripción general
+description: |
+  Las estrategias definen el estilo de juego que el motor generativo debe seguir.
+  Cada estrategia modifica cómo el LLM evalúa y selecciona movimientos.
+  
+  Uso:
+  - Después de 4 movimientos, el modelo elegirá automáticamente una estrategia
+  - Opcionalmente, puedes forzar una estrategia pasando 'strategy' en el request API
+  - Las estrategias son case-insensitive (puedes usar "Aggressive" o "aggressive")
+

@@ -1,0 +1,118 @@
+# Análisis de Posición de Ajedrez
+
+## Información de la Posición
+
+**Posición FEN:** `{{ fen }}`  
+**Histórico de movimientos (UCI):** `{{ move_history }}`  
+**Turno actual:** {{ current_turn }}
+
+{% if legal_moves %}
+## Movimientos Legales Disponibles
+
+### Movimientos por Categoría
+
+{% if legal_moves.captures %}
+**Capturas disponibles:** {{ legal_moves.captures | join(', ') }}
+{% endif %}
+
+{% if legal_moves.development %}
+**Desarrollo de piezas:** {{ legal_moves.development | join(', ') }}
+{% endif %}
+
+{% if legal_moves.king_moves %}
+**Movimientos de rey/enroque:** {{ legal_moves.king_moves | join(', ') }}
+{% endif %}
+
+{% if legal_moves.other %}
+**Otros movimientos:** {{ legal_moves.other | join(', ') }}
+{% endif %}
+
+**Total de movimientos legales:** {{ legal_moves.total }}
+
+{% endif %}
+
+## Proceso de Análisis
+
+Sigue este proceso mentalmente antes de decidir tu movimiento:
+
+### 1. Evaluación Inmediata
+- ¿Hay amenazas tácticas inmediatas (jaques, capturas forzadas, ataques)?
+- ¿Hay piezas desprotegidas o en peligro?
+- ¿Puedo capturar material con ventaja?
+
+### 2. Principios Estratégicos
+- **Desarrollo:** ¿Tengo piezas sin desarrollar? Desarrolla primero caballos y alfiles
+- **Control del centro:** e4, e5, d4, d5 son casillas clave
+- **Seguridad del rey:** ¿Necesito enrocar? ¿Está mi rey seguro?
+- **Estructura de peones:** ¿Tengo peones doblados o aislados? ¿Puedo crear debilidades en el oponente?
+- **Coordinación:** ¿Mis piezas trabajan juntas? ¿Hay piezas pasivas?
+
+### 3. Plan a Largo Plazo
+- ¿Cuál es el plan estratégico más fuerte para esta posición?
+- ¿Debo atacar, defender, o mejorar mi posición?
+
+### 4. Selección del Movimiento
+- Prioriza movimientos que: desarrollen piezas, controlen el centro, mejoren la coordinación
+- Evita movimientos que: dejen piezas sin desarrollar, debiliten tu posición, no tengan propósito
+- ⚠️ **CRÍTICO:** NO repitas movimientos del historial
+- ⚠️ **CRÍTICO:** NO muevas la misma pieza de ida y vuelta repetidamente
+
+{% if opening_phase %}
+## Fase de Apertura Detectada
+
+Estamos en la fase de **{{ opening_phase }}**. 
+
+{% if opening_phase == "apertura media" %}
+**Estrategia recomendada:** Completa el desarrollo, conecta las torres, y busca planes estratégicos.
+{% elif opening_phase == "apertura avanzada" %}
+**Estrategia recomendada:** Define tu plan estratégico, busca debilidades en la posición del oponente, y coordina tus piezas.
+{% elif opening_phase == "transición al medio juego" %}
+**Estrategia recomendada:** Transición al medio juego: busca tácticas, mejora la posición, y prepara el ataque o defensa según corresponda.
+{% endif %}
+
+{% if selected_strategy %}
+**Estrategia asignada:** {{ selected_strategy.name }}  
+**Descripción:** {{ selected_strategy.description }}  
+**Enfoque:** {{ selected_strategy.prompt_hint }}
+{% endif %}
+
+{% elif show_strategy_selection %}
+## Selección de Estrategia
+
+Ahora que la partida ha avanzado ({{ move_count }} movimientos), es momento de definir tu estrategia de juego.
+
+Por favor, elige UNA de las siguientes estrategias que mejor se adapte a la posición actual:
+
+{% for strategy_key, strategy_data in strategies.items() %}
+- **{{ strategy_key }}:** {{ strategy_data.description }}
+{% endfor %}
+
+{% elif selected_strategy %}
+## Estrategia Asignada
+
+**Estrategia:** {{ selected_strategy.name }}  
+**Descripción:** {{ selected_strategy.description }}  
+**Enfoque:** {{ selected_strategy.prompt_hint }}
+
+{% endif %}
+
+## Instrucciones Finales
+
+1. Analiza la posición FEN cuidadosamente - las piezas ya están en sus posiciones actuales según el FEN
+2. El turno es de {{ current_turn }} - solo puedes mover piezas de este color
+3. NO sugieras mover piezas desde casillas donde ya no están (verifica el FEN)
+4. El formato UCI es: casilla_origen + casilla_destino (ej: e2e4 significa mover de e2 a e4)
+
+## Respuesta Requerida
+
+**IMPORTANTE:** Responde ÚNICAMENTE con el movimiento en formato UCI.  
+**NO incluyas texto adicional, explicaciones ni comentarios.**
+
+**Formato:** `[movimiento en formato UCI]`
+
+{% if legal_moves %}
+**Ejemplos válidos:** {{ legal_moves.captures[:2] | join(', ') if legal_moves.captures else '' }}{{ ', ' if legal_moves.captures and legal_moves.development else '' }}{{ legal_moves.development[:2] | join(', ') if legal_moves.development else '' }}
+{% else %}
+**Ejemplos válidos:** e2e4, e7e5, g1f3, e1g1
+{% endif %}
+

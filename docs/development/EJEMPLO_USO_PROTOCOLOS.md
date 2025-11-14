@@ -91,10 +91,29 @@ config_local = {
 llama = GenerativeEngine("llama-local", config_local)
 
 # Usar con contexto adicional
+# Nota: Después de 4 movimientos, el modelo elegirá automáticamente una estrategia
+
+# Movimientos tempranos (0-3): sin selección de estrategia
+move = await gpt4.get_move(
+    fen,
+    move_history="1. e4 e5",  # Solo 2 movimientos
+    explanation=True
+)
+print(f"GPT-4 sugiere: {move}")
+
+# Movimientos avanzados (4+): el modelo elegirá estrategia automáticamente
+move = await gpt4.get_move(
+    fen,
+    move_history="1. e4 e5 2. Nf3 Nc6 3. Bb5 a6",  # 4 movimientos → selección automática
+    explanation=True
+)
+print(f"GPT-4 sugiere: {move}")
+
+# Forzar una estrategia específica (opcional)
 move = await gpt4.get_move(
     fen,
     move_history="1. e4 e5 2. Nf3",
-    strategy="aggressive",
+    strategy="aggressive",  # Fuerza estrategia agresiva
     explanation=True
 )
 print(f"GPT-4 sugiere: {move}")
@@ -255,25 +274,87 @@ uci_engines = EngineClassifier.filter_by_protocol(manager.engines, "UCIProtocol"
 rest_engines = EngineClassifier.filter_by_protocol(manager.engines, "RESTProtocol")
 ```
 
-## 🎨 Personalizar Prompts (Motores Generativos)
+## 🎨 Sistema de Estrategias Automático (Motores Generativos)
 
-### 9. Usar Prompts Externos
+### 9. Selección Automática de Estrategias
 
-Crear archivo `prompts/aggressive_style.yaml`:
+El sistema implementa un mecanismo inteligente de selección de estrategias basado en el progreso de la partida:
+
+**Fase Temprana (Movimientos 0-3)**
+- El prompt **no incluye** selección de estrategia
+- El modelo juega de forma equilibrada sin sesgos estratégicos
+- Permite exploración natural de la posición
+
+**Fase Avanzada (Movimientos 4+)**
+- El prompt **incluye automáticamente** una lista de estrategias disponibles
+- El modelo debe elegir una estrategia y responder:
+  ```
+  ESTRATEGIA: [nombre]
+  MOVIMIENTO: [uci]
+  ```
+- Las estrategias se cargan dinámicamente desde `config/chess_strategies.yaml`
+
+**Estrategias Disponibles:**
+- `balanced`: Equilibrio entre táctica y posición
+- `aggressive`: Juego agresivo, busca ataque y combinaciones
+- `defensive`: Juego defensivo, prioriza seguridad
+- `tactical`: Enfoque en combinaciones y tácticas
+- `positional`: Enfoque en estructura y planes a largo plazo
+- `material`: Prioriza ganancia de material
+- `king_safety`: Prioriza seguridad del rey
+
+**Implementación Técnica:**
+- El conteo de movimientos se realiza automáticamente desde `move_history` (soporta formatos PGN y UCI)
+- El template de prompt usa **Jinja2** con lógica condicional (`config/prompt_template.jinja`)
+  - Permite renderizado dinámico basado en el número de movimientos
+  - Las estrategias se iteran automáticamente desde el YAML
+- El sistema no requiere configuración adicional: funciona automáticamente para todos los motores generativos
+
+**Ejemplo de uso:**
+```python
+from engines import GenerativeEngine
+
+config = {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "api_key": "YOUR_KEY"
+}
+engine = GenerativeEngine("gpt-chess", config)
+
+# Movimientos tempranos: sin selección de estrategia
+move = await engine.get_move(
+    fen,
+    move_history="1. e4 e5"  # 2 movimientos → prompt simple
+)
+
+# Movimientos avanzados: selección automática de estrategia
+move = await engine.get_move(
+    fen,
+    move_history="1. e4 e5 2. Nf3 Nc6 3. Bb5 a6"  # 4 movimientos → modelo elige estrategia
+)
+
+# Forzar estrategia específica (opcional)
+move = await engine.get_move(
+    fen,
+    move_history="1. e4 e5",
+    strategy="aggressive"  # Fuerza estrategia agresiva
+)
+```
+
+### 10. Personalizar Prompts (Legacy)
+
+Para casos especiales, puedes usar prompts externos:
+
+Crear archivo `prompts/custom_style.yaml`:
 ```yaml
 template: |
   Eres un jugador de ajedrez agresivo y táctico.
   
-  Posición: {fen}
-  Histórico: {move_history}
+  Posición: {{ fen }}
+  Histórico: {{ move_history }}
   
   Busca el movimiento más agresivo posible.
-  Prioriza:
-  1. Ataques al rey
-  2. Capturas
-  3. Control del centro
   
-  Responde con el movimiento en formato UCI:
   MOVIMIENTO:
 ```
 
@@ -283,15 +364,9 @@ config = {
     "provider": "openai",
     "model": "gpt-4",
     "api_key": "YOUR_KEY",
-    "prompt_template_file": "prompts/aggressive_style.yaml"
+    "prompt_template_file": "prompts/custom_style.yaml"
 }
-aggressive_gpt = GenerativeEngine("aggressive-gpt", config)
-
-move = await aggressive_gpt.get_move(
-    fen,
-    move_history="1. e4 e5 2. Nf3 Nc6",
-    strategy="attack"
-)
+custom_gpt = GenerativeEngine("custom-gpt", config)
 ```
 
 ## 🔄 Gestión de Ciclo de Vida

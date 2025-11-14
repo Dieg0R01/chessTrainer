@@ -45,8 +45,9 @@ with Diagram(
     # Cliente/Aplicación principal
     app = Client("Aplicación de Ajedrez\n(Frontend/Backend)")
     
-    # Archivo de configuración
-    config = Storage("config/engines.yaml\n(Configuración)")
+    # Archivos de configuración
+    config_local = Storage("config/engines_local.yaml\n(Motores Locales)")
+    config_external = Storage("config/engines_external.yaml\n(Motores Externos)")
     
     with Cluster("Engine Manager System"):
         # EngineManager (Fábrica)
@@ -64,7 +65,8 @@ with Diagram(
                 rest_adapter = Python("RestEngineAdapter\n(HTTP/REST)")
         
         # Relaciones dentro del Engine Manager
-        manager >> Edge(label="carga") >> config
+        manager >> Edge(label="carga") >> config_local
+        manager >> Edge(label="carga") >> config_external
         manager >> Edge(label="crea/gestiona") >> interface
         interface >> Edge(label="implements", style="dashed") >> uci_adapter
         interface >> Edge(label="implements", style="dashed") >> rest_adapter

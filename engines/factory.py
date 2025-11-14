@@ -5,9 +5,15 @@ Actualizado para soportar arquitectura con protocolos.
 """
 
 import logging
-from typing import Any, Dict, Type, Optional
+from typing import Any, Dict, Type, Optional, List
 import yaml
+import sys
+import os
 
+# Agregar el directorio raíz al path para importar config
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from config import resolve_config_dict
 from .base import MotorBase, MotorType, MotorOrigin
 from .traditional import TraditionalEngine
 from .neuronal import NeuronalEngine
@@ -114,7 +120,10 @@ class EngineFactory:
         
         # Crear instancia
         try:
-            engine = engine_class(name=name, config=config)
+            # Añadir nombre del motor a la configuración para que los protocolos puedan usarlo
+            config_with_name = config.copy()
+            config_with_name["name"] = name
+            engine = engine_class(name=name, config=config_with_name)
             logger.info(f"Motor creado por factory: {name} ({normalized_type})")
             return engine
         except Exception as e:
@@ -201,6 +210,7 @@ class EngineFactory:
     def create_from_yaml(yaml_path: str) -> Dict[str, MotorBase]:
         """
         Crea motores desde un archivo YAML de configuración.
+        Resuelve variables de entorno en formato ${VARIABLE}.
         
         Args:
             yaml_path: Ruta al archivo YAML
@@ -212,11 +222,16 @@ class EngineFactory:
             with open(yaml_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
             
+            # Resolver variables de entorno en la configuración
+            config = resolve_config_dict(config)
+            
             engines_config = config.get("engines", {})
             engines = {}
             
             for name, engine_config in engines_config.items():
                 try:
+                    # Resolver variables de entorno en la configuración del motor
+                    engine_config = resolve_config_dict(engine_config)
                     engine = EngineFactory.create_engine(name, engine_config)
                     engines[name] = engine
                 except Exception as e:
@@ -235,6 +250,50 @@ class EngineFactory:
         except Exception as e:
             logger.error(f"Error leyendo configuración YAML {yaml_path}: {e}")
             raise
+    
+    @staticmethod
+    def create_from_multiple_yaml(yaml_paths: List[str]) -> Dict[str, MotorBase]:
+        """
+        Crea motores desde múltiples archivos YAML de configuración.
+        Combina todos los motores de los archivos en un solo diccionario.
+        
+        Args:
+            yaml_paths: Lista de rutas a archivos YAML
+            
+        Returns:
+            Diccionario combinado de motores creados {name: engine}
+            
+        Raises:
+            ValueError: Si hay nombres de motores duplicados entre archivos
+        """
+        all_engines = {}
+        
+        for yaml_path in yaml_paths:
+            try:
+                engines = EngineFactory.create_from_yaml(yaml_path)
+                
+                # Verificar duplicados
+                duplicates = set(all_engines.keys()) & set(engines.keys())
+                if duplicates:
+                    raise ValueError(
+                        f"Motores duplicados encontrados en {yaml_path}: {', '.join(duplicates)}"
+                    )
+                
+                # Combinar motores
+                all_engines.update(engines)
+                logger.info(f"Archivo {yaml_path} cargado: {len(engines)} motores")
+                
+            except FileNotFoundError:
+                logger.warning(f"Archivo de configuración no encontrado: {yaml_path}, omitiendo...")
+                # Continuar con los demás archivos
+                continue
+            except Exception as e:
+                logger.error(f"Error cargando {yaml_path}: {e}")
+                # Continuar con los demás archivos
+                continue
+        
+        logger.info(f"Total de motores cargados desde {len(yaml_paths)} archivos: {len(all_engines)}")
+        return all_engines
     
     @staticmethod
     def create_from_dict(engines_config: Dict[str, Dict[str, Any]]) -> Dict[str, MotorBase]:

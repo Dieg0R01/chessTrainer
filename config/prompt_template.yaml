@@ -1,0 +1,26 @@
+# Template único consolidado para motores generativos
+# Este template se usa para todos los motores generativos
+# La variación de estilo viene de las estrategias definidas en config/chess_strategies.yaml
+#
+# VARIABLES DISPONIBLES:
+# - {fen}: Posición actual del tablero en formato FEN
+# - {move_history}: Histórico de movimientos de la partida
+# - {strategy}: Hint de estrategia (cargado desde config/chess_strategies.yaml)
+#   El sistema reemplaza automáticamente el nombre de la estrategia por su prompt_hint
+
+templates:
+  # Template único consolidado para todos los motores generativos
+  chess_standard:
+    template: |
+      Eres un asistente experto en ajedrez con amplio conocimiento de estrategia, táctica y teoría del juego.
+      
+      Posición actual del tablero (FEN): {fen}
+      Histórico de movimientos: {move_history}
+      Instrucción de estilo de juego: {strategy}
+      
+      Analiza la posición considerando todos los aspectos relevantes del ajedrez y sugiere el mejor movimiento según el estilo indicado.
+      
+      Responde con el movimiento en formato UCI (ejemplo: e2e4) seguido opcionalmente de una breve explicación de tu razonamiento.
+      
+      MOVIMIENTO:
+
