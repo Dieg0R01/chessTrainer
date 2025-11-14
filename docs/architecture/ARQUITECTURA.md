@@ -57,6 +57,10 @@ Los motores se organizan según dos dimensiones independientes:
 - **Salida**: Texto con movimiento y razonamiento
 - **Ejemplos**: GPT-4 Chess, Claude, modelos locales con LangChain
 - **Validación**: Parsing de texto + validación de legalidad
+- **Sistema de Estrategias**: Selección automática después de 4 movimientos
+  - **Movimientos 0-3**: El prompt no incluye selección de estrategia, el modelo juega de forma equilibrada
+  - **Movimientos 4+**: El prompt incluye una lista de estrategias disponibles y pide al modelo que elija una
+  - **Estrategia forzada**: Opcionalmente, el usuario puede pasar `strategy` en el request para forzar una estrategia específica
 
 ### B. Origen del Servicio
 
@@ -318,7 +322,7 @@ Retorno: "e2e4"
 ```
 Usuario
   │
-  ├─ POST /move (engine=gpt4, fen="...", strategy="aggressive", explanation=true)
+  ├─ POST /move (engine=gpt4, fen="...", move_history="1. e4 e5 2. Nf3", explanation=true)
   │
   ▼
 EngineManager
@@ -328,14 +332,24 @@ EngineManager
   ▼
 GenerativeEngine
   │
-  ├─ 1. build_prompt(fen, strategy, history)
-  │      → "Eres un experto en ajedrez. Posición: ..."
+  ├─ 1. Contar movimientos desde move_history
+  │      → move_count = 4
   │
-  ├─ 2. call_llm(prompt)
+  ├─ 2. build_prompt(fen, move_history, move_count)
+  │      → Si move_count < 4: Prompt simple sin selección de estrategia
+  │      → Si move_count >= 4: Prompt con lista de estrategias desde chess_strategies.yaml
+  │      → Template Jinja2 renderizado con contexto dinámico
+  │      → "Eres un experto en ajedrez. Posición: ...
+  │         Ahora que la partida ha avanzado (4 movimientos), elige una estrategia:
+  │         - balanced: Equilibrio entre táctica y posición...
+  │         - aggressive: Juego agresivo..."
+  │
+  ├─ 3. call_llm(prompt)
   │      → POST a OpenAI API
-  │      → Respuesta: "La mejor jugada es e2e4 porque controla el centro..."
+  │      → Respuesta: "ESTRATEGIA: aggressive
+  │                    MOVIMIENTO: e2e4 porque controla el centro..."
   │
-  ├─ 3. parse_output(llm_response, fen)
+  ├─ 4. parse_output(llm_response, fen)
   │      → PromptValidator.extract_move_from_text()
   │      → "e2e4"
   │
@@ -349,6 +363,53 @@ PromptValidator
   ▼
 Retorno: "e2e4" + explicación
 ```
+
+#### Sistema de Estrategias Automático
+
+Los motores generativos implementan un sistema inteligente de selección de estrategias:
+
+**Fase Temprana (Movimientos 0-3)**
+- El prompt **no incluye** selección de estrategia
+- El modelo juega de forma equilibrada sin instrucciones específicas de estilo
+- Permite que el modelo explore la posición sin sesgos estratégicos
+
+**Fase Intermedia (Movimientos 4-9)**
+- El prompt **incluye automáticamente** una lista de todas las estrategias disponibles desde `config/chess_strategies.yaml`
+- El modelo debe elegir una estrategia y responder en formato:
+  ```
+  ESTRATEGIA: [nombre de la estrategia]
+  MOVIMIENTO: [movimiento en formato UCI]
+  ```
+- Las estrategias se listan dinámicamente con sus descripciones:
+  - `balanced`: Equilibrio entre táctica y posición
+  - `aggressive`: Juego agresivo, busca ataque y combinaciones
+  - `defensive`: Juego defensivo, prioriza seguridad
+  - `tactical`: Enfoque en combinaciones y tácticas
+  - `positional`: Enfoque en estructura y planes a largo plazo
+  - `material`: Prioriza ganancia de material
+  - `king_safety`: Prioriza seguridad del rey
+
+**Fase de Apertura Avanzada (Movimientos 10+)**
+- El sistema **detecta automáticamente** la fase de apertura y **asigna una estrategia** según el número de movimientos:
+  - **Apertura media** (10-15 movimientos) → Estrategia `positional`: Completa el desarrollo, conecta las torres
+  - **Apertura avanzada** (16-21 movimientos) → Estrategia `balanced`: Define planes estratégicos, busca debilidades
+  - **Transición al medio juego** (22+ movimientos) → Estrategia `tactical`: Busca tácticas, mejora la posición
+- El prompt incluye análisis estructurado de la posición con proceso paso a paso
+- Los movimientos legales se agrupan por categoría (capturas, desarrollo, movimientos de rey, otros) para mejor contexto
+
+**Estrategia Forzada (Opcional)**
+- Si el usuario pasa `strategy` en el request API, se usa esa estrategia específica
+- Útil para forzar un estilo de juego particular independientemente del número de movimientos
+- Ejemplo: `POST /move { "engine": "gpt-4o-mini", "fen": "...", "strategy": "aggressive" }`
+
+**Implementación Técnica**
+- El conteo de movimientos se realiza automáticamente desde `move_history` (soporta PGN y UCI)
+- El template de prompt usa **Jinja2** con lógica condicional:
+  - Prioridad: `config/prompt_template.md.jinja` (template mejorado con análisis estructurado)
+  - Fallback: `config/prompt_template.jinja` (template básico)
+- Las estrategias se cargan dinámicamente desde `config/chess_strategies.yaml`
+- La detección de fase de apertura se realiza mediante `_detect_opening_phase()` en `GenerativeEngine`
+- El análisis de movimientos legales se realiza mediante `_analyze_legal_moves()` que agrupa por categoría
 
 ---
 
@@ -409,11 +470,19 @@ manager = EngineManager("config/engines.yaml")
 # Obtener movimiento de Stockfish
 move = await manager.get_best_move("stockfish-local", fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", depth=20)
 
-# Obtener movimiento de LLM con explicación
+# Obtener movimiento de LLM (selección automática de estrategia después de 4 movimientos)
 move = await manager.get_best_move(
     "gpt4-chess",
     fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-    strategy="aggressive",
+    move_history="1. e4 e5 2. Nf3 Nc6 3. Bb5 a6",  # 4 movimientos → modelo elegirá estrategia
+    explanation=True
+)
+
+# O forzar una estrategia específica (opcional)
+move = await manager.get_best_move(
+    "gpt4-chess",
+    fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    strategy="aggressive",  # Fuerza estrategia agresiva
     explanation=True
 )
 ```
@@ -511,7 +580,7 @@ Obtener mejor movimiento de un motor
   "engine": "stockfish-local",
   "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   "depth": 20,
-  "strategy": "aggressive",  // Opcional para motores generativos
+  "strategy": "aggressive",  // Opcional: fuerza estrategia específica (si no se pasa, el modelo elegirá automáticamente después de 4 movimientos)
   "explanation": true         // Opcional para motores generativos
 }
 ```

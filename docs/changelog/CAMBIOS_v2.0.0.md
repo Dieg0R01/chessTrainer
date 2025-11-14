@@ -177,6 +177,32 @@ lc0-local:
 3. ✅ Validación inconsistente en `GenerativeEngine` corregida
 4. ✅ Mejor manejo de timeouts en APIs externas
 5. ✅ Cleanup de recursos más robusto
+6. ✅ **Bug crítico corregido**: Motores generativos ahora reciben historial de movimientos en formato correcto
+   - **Problema**: Los motores generativos (GPT-4o-mini, etc.) recibían el historial en formato PGN (`Nf6`, `Ng8`) en lugar de UCI (`g8f6`, `f6g8`), causando confusión y movimientos repetitivos (ej: mover el caballo de ida y vuelta repetidamente)
+   - **Causa raíz**: `game.history()` en chess.js devuelve movimientos en formato PGN, pero el prompt espera formato UCI para consistencia
+   - **Solución**: 
+     - Se modificó `GamePage.jsx` para convertir el historial de PGN a UCI usando `game.history({ verbose: true })` y construyendo el formato UCI manualmente (`from + to + promotion`)
+     - Se mejoró el prompt template (`config/prompt_template.jinja`) con instrucciones más explícitas sobre evitar movimientos repetitivos y jugar estratégicamente
+     - Se agregó logging en frontend y backend para debugging del historial de movimientos
+     - Se mejoró el template de fallback con las mismas instrucciones críticas
+   - **Impacto**: Los motores generativos ahora reciben el historial en el formato correcto (UCI), pueden tomar decisiones inteligentes basadas en el contexto completo del juego y evitan movimientos repetitivos
+   - **Archivos modificados**: 
+     - `frontend/src/GamePage.jsx` - Conversión de historial PGN→UCI y logging
+     - `config/prompt_template.jinja` - Instrucciones mejoradas sobre evitar repeticiones y jugar estratégicamente
+     - `main.py` - Logging del historial recibido
+     - `engines/generative.py` - Logging y template de fallback mejorado
+
+7. ✅ **Mejora de análisis estratégico para motores generativos**
+   - **Nuevo template analítico**: Se creó `config/prompt_template.md.jinja` con estructura Markdown para mejor visualización y análisis paso a paso de posiciones
+   - **Detección automática de fase de apertura**: Después de 10 movimientos, el sistema detecta automáticamente la fase (apertura media, apertura avanzada, transición al medio juego)
+   - **Asignación automática de estrategia**: Según la fase detectada, se asigna automáticamente una estrategia:
+     - Apertura media (10-15 movimientos) → `positional`
+     - Apertura avanzada (16-21 movimientos) → `balanced`
+     - Transición al medio juego (22+ movimientos) → `tactical`
+   - **Análisis mejorado de movimientos legales**: Los movimientos se agrupan por categoría (capturas, desarrollo, movimientos de rey, otros) para mejor contexto al LLM
+   - **Archivos modificados**:
+     - `config/prompt_template.md.jinja` - Nuevo template con análisis estructurado
+     - `engines/generative.py` - Funciones `_detect_opening_phase()` y `_analyze_legal_moves()` añadidas
 
 ---
 

@@ -1,0 +1,201 @@
+# Configuración de motores de ajedrez EXTERNOS
+# Motores que requieren tokens de API o hacen peticiones a servicios externos
+#
+# VARIABLES DE ENTORNO:
+# Las propiedades críticas usan sintaxis ${VARIABLE} que se resuelven desde .env
+# Ejemplo: api_key: "${OPENAI_API_KEY}"
+#
+# TEMPLATES DE PROMPTS:
+# Todos los motores generativos usan automáticamente config/prompt_template.yaml
+# No es necesario especificar el template en la configuración del motor
+# Para casos especiales, se puede usar prompt_template_file o prompt_template (inline)
+
+engines:
+  # ============================================================================
+  # MOTORES TRADICIONALES - DETERMINISTAS (EXTERNOS)
+  # ============================================================================
+  
+  # Motor REST externo: Lichess Cloud Analysis
+  lichess-cloud:
+    engine_type: traditional_rest
+    method: GET
+    url: "${LICHESS_API_URL:https://lichess.org/api/cloud-eval}"  # Variable opcional con valor por defecto
+    params:
+      fen: "{fen}"
+      multiPv: "1"
+    extract: "$.pvs[0].moves"
+    timeout: 30.0
+    description: "Lichess Cloud Analysis - Motor externo REST"
+  
+  # ============================================================================
+  # MOTORES NEURONALES (EXTERNOS)
+  # ============================================================================
+  
+  # Motor neuronal remoto (ejemplo: servicio con GPU)
+  # neuronal-remote:
+  #   engine_type: neuronal
+  #   protocol: rest
+  #   method: POST
+  #   url: "https://api.example.com/chess/analyze"
+  #   api_key: "YOUR_API_KEY"  # Requiere token de API
+  #   timeout: 60.0
+  #   extra_params:
+  #     model: "lc0-latest"
+  #   description: "Motor neuronal remoto con GPU"
+  
+  # ============================================================================
+  # MOTORES GENERATIVOS - LLMs (EXTERNOS)
+  # ============================================================================
+  
+  # GPT-4o-mini (Gratuito - Velocidad promedio)
+  gpt-4o-mini:
+    engine_type: generative
+    provider: openai
+    model: "gpt-4o-mini"
+    api_url: "${OPENAI_API_URL}"  # Variable de entorno con valor por defecto
+    api_key: "${OPENAI_API_KEY}"  # Variable de entorno obligatoria
+    temperature: 0.3
+    max_tokens: 500
+    description: "GPT-4o-mini - Modelo gratuito de OpenAI (velocidad promedio)"
+  
+  # GPT-3.5-turbo-0125 (Gratuito - Puede no estar disponible en free_chatgpt_api)
+  # NOTA: Los modelos con fecha específica pueden devolver 503 en la API gratuita
+  gpt-3.5-turbo-0125:
+    engine_type: generative
+    provider: openai
+    model: "gpt-3.5-turbo-0125"
+    api_url: "${OPENAI_API_URL}"
+    api_key: "${OPENAI_API_KEY}"
+    temperature: 0.3
+    max_tokens: 500
+    description: "GPT-3.5-turbo-0125 - Modelo gratuito (puede no estar disponible)"
+  
+  # GPT-3.5-turbo-1106 (Gratuito - Puede no estar disponible en free_chatgpt_api)
+  # NOTA: Los modelos con fecha específica pueden devolver 503 en la API gratuita
+  gpt-3.5-turbo-1106:
+    engine_type: generative
+    provider: openai
+    model: "gpt-3.5-turbo-1106"
+    api_url: "${OPENAI_API_URL}"
+    api_key: "${OPENAI_API_KEY}"
+    temperature: 0.3
+    max_tokens: 500
+    description: "GPT-3.5-turbo-1106 - Modelo gratuito (puede no estar disponible)"
+  
+  # GPT-3.5-turbo (Gratuito - Versión estándar)
+  gpt-3.5-turbo:
+    engine_type: generative
+    provider: openai
+    model: "gpt-3.5-turbo"
+    api_url: "${OPENAI_API_URL}"
+    api_key: "${OPENAI_API_KEY}"
+    temperature: 0.3
+    max_tokens: 500
+    description: "GPT-3.5-turbo - Modelo gratuito de OpenAI (versión estándar)"
+  
+  # GPT-3.5-turbo-16k (Gratuito - Contexto extendido)
+  gpt-3.5-turbo-16k:
+    engine_type: generative
+    provider: openai
+    model: "gpt-3.5-turbo-16k"
+    api_url: "${OPENAI_API_URL}"
+    api_key: "${OPENAI_API_KEY}"
+    temperature: 0.3
+    max_tokens: 500
+    description: "GPT-3.5-turbo-16k - Modelo gratuito con contexto extendido"
+  
+  # net-gpt-3.5-turbo (Gratuito - Con búsqueda en red, menos estable)
+  net-gpt-3.5-turbo:
+    engine_type: generative
+    provider: openai
+    model: "net-gpt-3.5-turbo"
+    api_url: "${OPENAI_API_URL}"
+    api_key: "${OPENAI_API_KEY}"
+    temperature: 0.3
+    max_tokens: 500
+    description: "net-gpt-3.5-turbo - Modelo con búsqueda en red (menos estable)"
+  
+  # GPT-4 Chess Assistant (OpenAI) - Modelo de pago
+  # gpt4-chess:
+  #   engine_type: generative
+  #   provider: openai
+  #   model: "gpt-4"
+  #   # api_key se lee desde variable de entorno OPENAI_API_KEY
+  #   temperature: 0.3
+  #   max_tokens: 500
+  #   prompt_template: |
+  #     Eres un asistente experto en ajedrez.
+  #     
+  #     Posición actual (FEN): {fen}
+  #     Histórico: {move_history}
+  #     Estrategia: {strategy}
+  #     
+  #     Analiza la posición y sugiere el mejor movimiento en formato UCI (ej: e2e4).
+  #     Responde SOLO con el movimiento seguido de tu razonamiento breve.
+  #     
+  #     MOVIMIENTO:
+  #   description: "GPT-4 Chess Assistant - Motor generativo (modelo de pago)"
+  
+  # Claude Chess Assistant (Anthropic)
+  # claude-chess:
+  #   engine_type: generative
+  #   provider: anthropic
+  #   model: "claude-3-opus-20240229"
+  #   # api_key se lee desde variable de entorno ANTHROPIC_API_KEY
+  #   max_tokens: 500
+  #   description: "Claude Chess Assistant - Motor generativo"
+
+# ============================================================================
+# NOTAS DE CONFIGURACIÓN - MOTORES EXTERNOS
+# ============================================================================
+#
+# Estos motores requieren tokens de API o hacen peticiones a servicios externos.
+# IMPORTANTE: Configura tus API keys antes de usar estos motores.
+#
+# 1. MOTORES TRADICIONALES EXTERNOS:
+#    - REST: Requieren 'url', 'method', y 'extract' (JSONPath)
+#    - Algunos pueden requerir autenticación (api_key)
+#    - Ejemplo: Lichess Cloud Analysis (público, sin API key)
+#
+# 2. MOTORES NEURONALES EXTERNOS:
+#    - REST: Requieren endpoint de API con GPU
+#    - Generalmente requieren 'api_key' para autenticación
+#    - Pueden usar 'nodes' en vez de 'depth'
+#
+# 3. MOTORES GENERATIVOS EXTERNOS:
+#    - OpenAI/Anthropic: Requieren 'provider', 'model', 'api_url' y 'api_key'
+#    - Variables de entorno: Usan sintaxis ${VARIABLE} o ${VARIABLE:default}
+#      Ejemplo: api_key: "${OPENAI_API_KEY}"
+#               api_url: "${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}"
+#    - Templates de prompts: Todos los motores generativos usan automáticamente config/prompt_template.yaml
+#      No es necesario especificar el template en la configuración
+#      Para casos especiales: prompt_template_file: "ruta/al/archivo.yaml" o prompt_template: "Texto inline"
+#    - Usan validación por prompt (extracción de texto)
+#
+# 4. PARÁMETROS CRÍTICOS (obligatorios, usar ${VARIABLE}):
+#    - provider: Proveedor del servicio (openai, anthropic, etc.)
+#    - model: Modelo a usar
+#    - api_url: URL del endpoint (ej: "${OPENAI_API_URL:valor_por_defecto}")
+#    - api_key: Token de API (ej: "${OPENAI_API_KEY}")
+#
+# 5. PARÁMETROS NO CRÍTICOS (opcionales con valores por defecto):
+#    - engine_type: Tipo explícito (si no, se infiere automáticamente)
+#    - description: Descripción del motor (opcional)
+#    - timeout: Timeout en segundos (opcional, default: 60.0)
+#    - temperature: Temperatura para generación (opcional, default: 0.3)
+#    - max_tokens: Máximo de tokens (opcional, default: 500)
+#    - prompt_template_file: Archivo de template personalizado (opcional, para casos especiales)
+#    - prompt_template: Prompt inline (opcional, para casos especiales)
+#    - default_depth/default_search_value: Valores por defecto
+#
+# 5. PARA AÑADIR NUEVOS MOTORES EXTERNOS:
+#    - Copia una configuración similar
+#    - Ajusta los parámetros según el tipo
+#    - Configura el api_key correspondiente
+#    - Recarga la configuración con POST /reload
+#
+# 6. SEGURIDAD:
+#    - NO subas este archivo con API keys reales a repositorios públicos
+#    - Considera usar variables de entorno para API keys sensibles
+#    - Revisa la documentación de cada servicio para obtener tus API keys
+

@@ -129,3 +129,19 @@ option {
   animation: blink 1s infinite;
 }
 
+/* Animación de parpadeo verde para casillas posibles */
+@keyframes blink-green {
+  0% { 
+    background-color: rgba(0, 255, 0, 0.4);
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+  }
+  50% { 
+    background-color: rgba(0, 255, 0, 0.7);
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.9);
+  }
+  100% { 
+    background-color: rgba(0, 255, 0, 0.4);
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+  }
+}
+

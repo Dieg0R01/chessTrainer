@@ -12,6 +12,8 @@ function GamePage() {
   const [status, setStatus] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const lastMoveWasEngineRef = useRef(false);
+  const [selectedSquare, setSelectedSquare] = useState(null);
+  const [possibleMoves, setPossibleMoves] = useState({});
 
   const updateStatus = useCallback(() => {
     const game = gameRef.current;
@@ -40,8 +42,33 @@ function GamePage() {
       const game = gameRef.current;
       const currentFen = game.fen();
       
+      // Obtener historial de movimientos en formato UCI (separado por espacios)
+      // CRÍTICO: game.history() devuelve PGN, necesitamos UCI para el prompt
+      // Usamos history({ verbose: true }) para obtener objetos con información completa
+      let moveHistory = 'Inicio de la partida';
+      const historyVerbose = game.history({ verbose: true });
+      
+      if (historyVerbose.length > 0) {
+        // Convertir cada movimiento a formato UCI: from + to + (promotion si aplica)
+        const uciMoves = historyVerbose.map(move => {
+          let uci = move.from + move.to;
+          if (move.promotion) {
+            uci += move.promotion.toLowerCase();
+          }
+          return uci;
+        });
+        moveHistory = uciMoves.join(' ');
+      }
+      
+      // Log para debugging: verificar que el historial se envía correctamente
+      console.log(`📜 Historial de movimientos (UCI) enviado a ${engineName}:`, moveHistory);
+      console.log(`📊 Total de movimientos en historial:`, historyVerbose.length);
+      
       // Obtener el movimiento del backend usando la API centralizada
-      const data = await fetchBestMove(engineName, currentFen, 10);
+      // Pasar move_history para que los motores generativos tengan contexto del juego
+      const data = await fetchBestMove(engineName, currentFen, 10, {
+        move_history: moveHistory
+      });
       const bestMove = data.bestmove;
 
       if (bestMove) {
@@ -110,8 +137,12 @@ function GamePage() {
     
     const currentPlayer = getCurrentPlayer();
     
-    // Si es turno de un motor, hacer que juegue automáticamente
+    // Si es turno de un motor, limpiar selección y hacer que juegue automáticamente
     if (currentPlayer) {
+      // Limpiar selección cuando es turno de un motor
+      setSelectedSquare(null);
+      setPossibleMoves({});
+      
       console.log(`Es turno del motor: ${currentPlayer}`);
       // Pequeño delay para evitar problemas de estado
       const timeoutId = setTimeout(() => {
@@ -137,10 +168,101 @@ function GamePage() {
     }
   }, [updateStatus, getCurrentPlayer, makeEngineMove, selectedEngineA, selectedEngineB]);
 
+  // Función para obtener los movimientos posibles de una casilla
+  const getPossibleMoves = useCallback((square) => {
+    const game = gameRef.current;
+    const moves = game.moves({
+      square: square,
+      verbose: true
+    });
+    
+    const moveSquares = {};
+    moves.forEach((move) => {
+      // Usar un pequeño círculo verde centrado usando backgroundImage con gradiente radial
+      moveSquares[move.to] = {
+        backgroundImage: 'radial-gradient(circle, rgba(0, 255, 0, 0.6) 0%, rgba(0, 255, 0, 0.6) 40%, transparent 40%)',
+        backgroundSize: '20px 20px',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        animation: 'blink-green 1s infinite'
+      };
+    });
+    
+    return moveSquares;
+  }, []);
+
+  // Función para manejar clicks en casillas
+  const onSquareClick = useCallback((square) => {
+    if (isProcessing) return; // Evitar interacciones durante procesamiento
+    
+    const game = gameRef.current;
+    
+    // Verificar si es turno de un motor (no permitir interacción humana)
+    const currentPlayer = getCurrentPlayer();
+    if (currentPlayer) {
+      // Es turno de un motor, no permitir clicks
+      return;
+    }
+    
+    const piece = game.get(square);
+    
+    // Si hay una pieza seleccionada y se hace click en una casilla destino
+    if (selectedSquare && selectedSquare !== square) {
+      // Intentar hacer el movimiento
+      try {
+        const move = game.move({
+          from: selectedSquare,
+          to: square,
+          promotion: 'q'
+        });
+
+        console.log("Movimiento por click:", move);
+        
+        // Limpiar selección y casillas posibles
+        setSelectedSquare(null);
+        setPossibleMoves({});
+        
+        // Actualizar posición
+        lastMoveWasEngineRef.current = false; // El movimiento fue humano
+        setPosition(game.fen());
+        updateStatus();
+        
+        return;
+      } catch (error) {
+        console.log("Movimiento ILEGAL:", error.message);
+        // Si el movimiento es ilegal, limpiar selección y permitir nueva selección
+        setSelectedSquare(null);
+        setPossibleMoves({});
+      }
+    }
+    
+    // Si se hace click en una pieza del color que tiene el turno
+    if (piece && piece.color === game.turn()) {
+      setSelectedSquare(square);
+      const moves = getPossibleMoves(square);
+      setPossibleMoves(moves);
+    } else {
+      // Si se hace click en una casilla vacía o pieza del otro color, limpiar selección
+      setSelectedSquare(null);
+      setPossibleMoves({});
+    }
+  }, [selectedSquare, isProcessing, getPossibleMoves, updateStatus, getCurrentPlayer]);
+
   const onPieceDrop = useCallback((sourceSquare, targetSquare) => {
     console.log("onPieceDrop llamado:", sourceSquare, "->", targetSquare);
     
     if (isProcessing) return false; // Evitar movimientos durante procesamiento
+    
+    // Verificar si es turno de un motor (no permitir interacción humana)
+    const currentPlayer = getCurrentPlayer();
+    if (currentPlayer) {
+      // Es turno de un motor, no permitir drag and drop
+      return false;
+    }
+    
+    // Limpiar selección cuando se hace drag and drop
+    setSelectedSquare(null);
+    setPossibleMoves({});
     
     try {
       const game = gameRef.current;
@@ -168,13 +290,33 @@ function GamePage() {
       console.log("Movimiento ILEGAL:", error.message);
       return false;
     }
-  }, [isProcessing, updateStatus, makeEngineMove, selectedEngineA, selectedEngineB]);
+  }, [isProcessing, updateStatus, getCurrentPlayer]);
+
+  // Combinar estilos personalizados: casilla seleccionada + casillas posibles
+  const customSquareStyles = useMemo(() => {
+    const styles = { ...possibleMoves };
+    
+    // Agregar estilo para la casilla seleccionada (mismo color verde que las casillas posibles)
+    if (selectedSquare) {
+      styles[selectedSquare] = {
+        backgroundImage: 'radial-gradient(circle, rgba(0, 255, 0, 0.6) 0%, rgba(0, 255, 0, 0.6) 40%, transparent 40%)',
+        backgroundSize: '20px 20px',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        animation: 'blink-green 1s infinite'
+      };
+    }
+    
+    return styles;
+  }, [selectedSquare, possibleMoves]);
 
   // Memoizar el componente Chessboard para evitar re-renders innecesarios
   const memoizedChessboard = useMemo(() => (
     <Chessboard
       position={position}
       onPieceDrop={onPieceDrop}
+      onSquareClick={onSquareClick}
+      customSquareStyles={customSquareStyles}
       customBoardStyle={{
         borderRadius: '0px',
         boxShadow: 'none',
@@ -189,7 +331,7 @@ function GamePage() {
       }}
       boardWidth={600}
     />
-  ), [position, onPieceDrop]);
+  ), [position, onPieceDrop, onSquareClick, customSquareStyles]);
 
   console.log("Renderizando GamePage, FEN:", position);
 

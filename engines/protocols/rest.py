@@ -9,6 +9,12 @@ from typing import Optional, Dict, Any
 from jsonpath import jsonpath
 from .base import ProtocolBase
 
+# Importar módulo de configuración para variables de entorno
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from config import get_api_key
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,9 +34,20 @@ class RESTProtocol(ProtocolBase):
         super().__init__(config)
         self.url = config.get("url")
         self.method = config.get("method", "POST").upper()
-        self.api_key = config.get("api_key")
         self.timeout = config.get("timeout", 30.0)
         self.extract_path = config.get("extract")  # JSONPath para extraer movimiento
+        
+        # Obtener API key: primero desde config, luego desde variables de entorno
+        config_api_key = config.get("api_key")
+        engine_name = config.get("name")  # Nombre del motor si está disponible
+        
+        if config_api_key and config_api_key != "YOUR_API_KEY" and not config_api_key.startswith("YOUR_"):
+            # Usar API key de configuración si está presente y no es placeholder
+            self.api_key = config_api_key
+        else:
+            # Buscar en variables de entorno (usar provider si está disponible, sino None)
+            provider = config.get("provider") or config.get("engine_type", "").split("_")[0] if config.get("engine_type") else None
+            self.api_key = get_api_key(provider or "rest", engine_name)
         
         if not self.url:
             raise ValueError("RESTProtocol requiere 'url' en configuración")

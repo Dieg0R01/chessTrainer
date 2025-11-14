@@ -21,33 +21,59 @@ class EngineManager:
     Proporciona interfaz unificada para trabajar con múltiples motores.
     """
     
-    def __init__(self, config_path: str = "config/engines.yaml"):
+    def __init__(self, config_path = None):
         """
         Inicializa el gestor de motores.
         
         Args:
-            config_path: Ruta al archivo de configuración YAML
+            config_path: Ruta al archivo de configuración YAML (opcional).
+                        Si es None, carga engines_local.yaml y engines_external.yaml por defecto.
+                        Si es una cadena, carga ese archivo único (retrocompatibilidad).
+                        Si es una lista, carga todos los archivos especificados.
         """
-        self.config_path = config_path
+        if config_path is None:
+            # Por defecto, cargar ambos archivos separados
+            self.config_paths = ["config/engines_local.yaml", "config/engines_external.yaml"]
+            self.config_path = None  # Mantener para retrocompatibilidad
+        elif isinstance(config_path, str):
+            # Retrocompatibilidad: un solo archivo
+            self.config_path = config_path
+            self.config_paths = [config_path]
+        elif isinstance(config_path, list):
+            # Múltiples archivos explícitos
+            self.config_paths = config_path
+            self.config_path = config_path[0] if config_path else None
+        else:
+            raise ValueError(f"config_path debe ser str, list o None, recibido: {type(config_path)}")
+        
         self.engines: Dict[str, MotorBase] = {}
-        self.load_config(config_path)
+        self.load_config()
     
-    def load_config(self, config_path: str) -> None:
+    def load_config(self, config_paths: Optional[List[str]] = None) -> None:
         """
         Carga la configuración de motores desde YAML.
         
         Args:
-            config_path: Ruta al archivo de configuración
+            config_paths: Lista de rutas a archivos de configuración (opcional).
+                         Si es None, usa self.config_paths
         """
+        paths_to_load = config_paths if config_paths is not None else self.config_paths
+        
         try:
-            self.engines = EngineFactory.create_from_yaml(config_path)
+            if len(paths_to_load) == 1:
+                # Un solo archivo: usar método original para retrocompatibilidad
+                self.engines = EngineFactory.create_from_yaml(paths_to_load[0])
+            else:
+                # Múltiples archivos: usar método nuevo
+                self.engines = EngineFactory.create_from_multiple_yaml(paths_to_load)
+            
             logger.info(f"Configuración cargada: {len(self.engines)} motores disponibles")
         except Exception as e:
-            logger.error(f"Error cargando configuración desde {config_path}: {e}")
+            logger.error(f"Error cargando configuración desde {paths_to_load}: {e}")
             raise
     
     def reload_config(self) -> None:
-        """Recarga la configuración desde el archivo"""
+        """Recarga la configuración desde los archivos"""
         # Limpiar motores existentes
         for engine in self.engines.values():
             try:
@@ -57,7 +83,7 @@ class EngineManager:
                 logger.warning(f"Error limpiando motor al recargar: {e}")
         
         self.engines.clear()
-        self.load_config(self.config_path)
+        self.load_config()
     
     def get_engine(self, name: str) -> MotorBase:
         """
