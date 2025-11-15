@@ -3,6 +3,7 @@
 Sistema completo de entrenamiento de ajedrez con backend FastAPI y frontend React + Vite.
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![DeepWiki](https://img.shields.io/badge/DeepWiki-Documentación-brightgreen)](https://deepwiki.com/Dieg0R01/chessTrainer)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
