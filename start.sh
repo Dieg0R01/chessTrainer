@@ -17,14 +17,60 @@ if [ ! -f "main.py" ]; then
     exit 1
 fi
 
-# Verificar que conda está disponible
+# Intentar inicializar conda desde ubicaciones comunes si no está en PATH
+if ! command -v conda &> /dev/null; then
+    # Intentar inicializar conda desde ubicaciones comunes
+    if [ -f "/opt/anaconda3/etc/profile.d/conda.sh" ]; then
+        source "/opt/anaconda3/etc/profile.d/conda.sh"
+    elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
+        source "$HOME/anaconda3/etc/profile.d/conda.sh"
+    elif [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+        source "$HOME/miniconda3/etc/profile.d/conda.sh"
+    elif [ -f "$(dirname $(which python 2>/dev/null || echo ""))/../etc/profile.d/conda.sh" ]; then
+        source "$(dirname $(which python 2>/dev/null || echo ""))/../etc/profile.d/conda.sh"
+    fi
+fi
+
+# Inicializar conda completamente antes de usar comandos conda
+# Primero intentar desde ubicaciones conocidas
+CONDA_BASE=""
+if [ -d "/opt/anaconda3" ]; then
+    CONDA_BASE="/opt/anaconda3"
+elif [ -d "$HOME/anaconda3" ]; then
+    CONDA_BASE="$HOME/anaconda3"
+elif [ -d "$HOME/miniconda3" ]; then
+    CONDA_BASE="$HOME/miniconda3"
+else
+    # Intentar obtener desde conda si ya está en PATH
+    if command -v conda &> /dev/null; then
+        CONDA_BASE=$(conda info --base 2>/dev/null)
+    fi
+fi
+
+# Si encontramos CONDA_BASE, inicializar conda
+if [ -n "$CONDA_BASE" ] && [ -f "$CONDA_BASE/etc/profile.d/conda.sh" ]; then
+    source "$CONDA_BASE/etc/profile.d/conda.sh"
+elif command -v conda &> /dev/null; then
+    # Si conda ya está disponible, intentar obtener base y cargar
+    CONDA_BASE=$(conda info --base 2>/dev/null)
+    if [ -n "$CONDA_BASE" ] && [ -f "$CONDA_BASE/etc/profile.d/conda.sh" ]; then
+        source "$CONDA_BASE/etc/profile.d/conda.sh"
+    fi
+fi
+
+# Verificar que conda está disponible después de intentar inicializar
 if ! command -v conda &> /dev/null; then
     echo "❌ Error: Conda no está instalado o no está en el PATH"
+    echo "   Intenta inicializar conda manualmente:"
+    echo "   source /opt/anaconda3/etc/profile.d/conda.sh"
     exit 1
 fi
 
-# Inicializar conda
-source "$(conda info --base)/etc/profile.d/conda.sh"
+# Verificar que conda está funcionando correctamente
+if ! conda info --base &> /dev/null; then
+    echo "❌ Error: Conda no está funcionando correctamente después de inicializar"
+    exit 1
+fi
 
 # Verificar que el entorno chess existe
 if ! conda env list | grep -q "^chess "; then
@@ -33,10 +79,11 @@ if ! conda env list | grep -q "^chess "; then
     exit 1
 fi
 
-# Activar entorno y verificar dependencias
+# Activar entorno usando conda activate (ahora que conda está inicializado)
 conda activate chess
 if [ $? -ne 0 ]; then
     echo "❌ Error: No se pudo activar el entorno conda 'chess'"
+    echo "   Verifica que el entorno existe: conda env list"
     exit 1
 fi
 
@@ -123,8 +170,7 @@ LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || ifconfig | grep "inet " | grep 
 # Iniciar backend en segundo plano
 echo -e "${BLUE}📦 Iniciando Backend (FastAPI)...${NC}"
 
-# Asegurar que estamos en el entorno correcto
-source "$(conda info --base)/etc/profile.d/conda.sh"
+# Asegurar que estamos en el entorno correcto (conda ya está inicializado arriba)
 conda activate chess
 
 # Verificar que podemos importar los módulos antes de iniciar

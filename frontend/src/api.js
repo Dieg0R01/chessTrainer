@@ -159,3 +159,212 @@ export const checkBackendHealth = async () => {
   }
 };
 
+/**
+ * Obtiene información detallada de todos los motores
+ * @returns {Promise<{engines: Array<{name: string, type: string, origin: string, validation_mode: string, initialized: boolean}>, count: number}>}
+ */
+export const fetchEnginesInfo = async () => {
+  try {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/engines/info`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Error desconocido');
+      throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error al obtener información de motores:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene la matriz de clasificación de motores
+ * @returns {Promise<{matrix: Array, count: number, description: {type: string[], origin: string[], validation_mode: string[]}}>}
+ */
+export const fetchEnginesMatrix = async () => {
+  try {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/engines/matrix`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Error desconocido');
+      throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error al obtener matriz de clasificación:', error);
+    throw error;
+  }
+};
+
+/**
+ * Filtra motores por tipo
+ * @param {string} motorType - Tipo de motor: 'traditional', 'neuronal', o 'generative'
+ * @returns {Promise<{type: string, engines: string[], count: number}>}
+ */
+export const filterEnginesByType = async (motorType) => {
+  try {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/engines/filter/type/${motorType}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ 
+        detail: `Error HTTP ${response.status}: ${response.statusText}` 
+      }));
+      throw new Error(errorData.detail || 'Error desconocido del servidor');
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`Error al filtrar motores por tipo ${motorType}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Filtra motores por origen
+ * @param {string} motorOrigin - Origen del motor: 'internal' o 'external'
+ * @returns {Promise<{origin: string, engines: string[], count: number}>}
+ */
+export const filterEnginesByOrigin = async (motorOrigin) => {
+  try {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/engines/filter/origin/${motorOrigin}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ 
+        detail: `Error HTTP ${response.status}: ${response.statusText}` 
+      }));
+      throw new Error(errorData.detail || 'Error desconocido del servidor');
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`Error al filtrar motores por origen ${motorOrigin}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene la lista de estrategias disponibles para motores generativos
+ * @returns {Promise<{strategies: Object, count: number, default: string}>}
+ */
+export const fetchStrategies = async () => {
+  try {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/strategies`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Error desconocido');
+      throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error al obtener estrategias:', error);
+    throw error;
+  }
+};
+
+/**
+ * Compara las sugerencias de todos los motores disponibles para una posición
+ * @param {string} fen - Posición del tablero en formato FEN
+ * @param {number} depth - Profundidad de análisis (opcional)
+ * @returns {Promise<{fen: string, results: Array, engines_compared: number}>}
+ */
+export const compareEngines = async (fen, depth = null) => {
+  try {
+    const backendUrl = getBackendUrl();
+    const requestBody = { fen };
+    if (depth !== null) {
+      requestBody.depth = depth;
+    }
+    
+    const response = await fetch(`${backendUrl}/compare`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ 
+        detail: `Error HTTP ${response.status}: ${response.statusText}` 
+      }));
+      throw new Error(errorData.detail || 'Error desconocido del servidor');
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error al comparar motores:', error);
+    throw error;
+  }
+};
+
+/**
+ * Recarga la configuración de motores desde el archivo YAML
+ * @returns {Promise<{status: string, message: string, engines_loaded: number}>}
+ */
+export const reloadConfig = async () => {
+  try {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/reload`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ 
+        detail: `Error HTTP ${response.status}: ${response.statusText}` 
+      }));
+      throw new Error(errorData.detail || 'Error desconocido del servidor');
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error al recargar configuración:', error);
+    throw error;
+  }
+};
+

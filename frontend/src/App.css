@@ -1,7 +1,7 @@
 .retro-container {
   width: 90vw;
   max-width: 2100px;
-  max-height: 75vh;
+  max-height: 100vh;
   height: auto;
   background: linear-gradient(
     to bottom,
@@ -19,24 +19,46 @@
   gap: 22.5px;
   contain: layout style;
   will-change: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Scrollbar styling */
+.retro-container::-webkit-scrollbar {
+  width: 12px;
+}
+
+.retro-container::-webkit-scrollbar-track {
+  background: rgba(0, 20, 0, 0.8);
+  border: 1px solid var(--retro-green);
+}
+
+.retro-container::-webkit-scrollbar-thumb {
+  background: var(--retro-dark-green);
+  border: 2px solid var(--retro-green);
+}
+
+.retro-container::-webkit-scrollbar-thumb:hover {
+  background: var(--retro-green);
+  box-shadow: 0 0 10px var(--retro-glow);
 }
 
 /* Responsive height */
 @media (max-width: 1920px) {
   .retro-container {
-    max-height: 80vh;
+    max-height: 100vh;
   }
 }
 
 @media (max-width: 1600px) {
   .retro-container {
-    max-height: 85vh;
+    max-height: 100vh;
   }
 }
 
 @media (max-width: 1366px) {
   .retro-container {
-    max-height: 90vh;
+    max-height: 100vh;
   }
 }
 
@@ -107,9 +129,9 @@ img.chess-logo,
   display: grid;
   grid-template-columns: minmax(330px, 1fr) minmax(600px, 2fr) minmax(330px, 1fr);
   gap: 30px;
-  padding: 15px;
+  overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
-  overflow: hidden;
 }
 
 /* Panels */
@@ -227,43 +249,164 @@ img.chess-logo,
   letter-spacing: 4.5px !important;
 }
 
-/* Control panel */
+/* Control panel - Botones estilo corchetes */
+button.retro-button,
 .retro-button {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 21px !important;
-  padding: 22.5px 30px !important;
-  background: var(--retro-dark-green);
-  color: var(--retro-green);
-  border: 4.5px solid var(--retro-green);
+  font-family: 'VT323', monospace !important;
+  font-size: 24px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  color: var(--retro-green) !important;
+  border: none !important;
   cursor: pointer;
   transition: all 0.1s;
-  letter-spacing: 3px !important;
+  letter-spacing: 2px !important;
+  text-align: left;
+  position: relative;
+  display: inline-flex !important;
+  align-items: stretch;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
   width: 100%;
+  min-height: 40px;
+  vertical-align: middle;
+  outline: none !important;
+}
+
+button.retro-button::before,
+.retro-button::before {
+  content: '[' !important;
+  color: var(--retro-green) !important;
+  border-top: 2px solid var(--retro-green) !important;
+  border-bottom: 2px solid var(--retro-green) !important;
+  border-left: 2px solid var(--retro-green) !important;
+  border-right: none !important;
+  padding: 8px 2px 8px 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  min-width: 18px !important;
+  height: 100% !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+  position: relative !important;
+  z-index: 1 !important;
+  background: transparent !important;
+  font-family: 'VT323', monospace !important;
+}
+
+button.retro-button::after,
+.retro-button::after {
+  content: ']' !important;
+  color: var(--retro-green) !important;
+  border-top: 2px solid var(--retro-green) !important;
+  border-bottom: 2px solid var(--retro-green) !important;
+  border-right: 2px solid var(--retro-green) !important;
+  border-left: none !important;
+  padding: 8px 8px 8px 2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  min-width: 18px !important;
+  height: 100% !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+  position: relative !important;
+  z-index: 1 !important;
+  background: transparent !important;
+  font-family: 'VT323', monospace !important;
+}
+
+/* El texto del botón necesita padding para estar entre los corchetes */
+button.retro-button:not(:empty),
+.retro-button:not(:empty) {
+  padding: 8px 8px !important;
 }
 
 .retro-button:hover {
-  background: var(--retro-green);
-  color: var(--retro-dark-green);
-  box-shadow: 0 0 22.5px var(--retro-glow);
+  color: var(--retro-glow) !important;
+  text-shadow: 0 0 10px var(--retro-glow);
+  background: transparent !important;
+}
+
+.retro-button:hover::before {
+  border-color: var(--retro-glow);
+  color: var(--retro-glow);
+  box-shadow: 0 0 10px var(--retro-glow);
+}
+
+.retro-button:hover::after {
+  border-color: var(--retro-glow);
+  color: var(--retro-glow);
+  box-shadow: 0 0 10px var(--retro-glow);
 }
 
 .retro-button:active {
-  background: var(--retro-dark-green);
+  color: var(--retro-green) !important;
+  text-shadow: none;
+  background: transparent !important;
+}
+
+.retro-button:active::before,
+.retro-button:active::after {
+  border-color: var(--retro-green);
   color: var(--retro-green);
-  box-shadow: 0 0 7.5px var(--retro-glow);
+  box-shadow: none;
 }
 
 .retro-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+  background: transparent !important;
 }
 
 .retro-button:disabled:hover {
-  background: var(--retro-dark-green);
+  color: var(--retro-green) !important;
+  text-shadow: none;
+  transform: none;
+  background: transparent !important;
+}
+
+.retro-button:disabled:hover::before,
+.retro-button:disabled:hover::after {
+  border-color: var(--retro-green);
   color: var(--retro-green);
   box-shadow: none;
-  transform: none;
+}
+
+/* Custom Select Styles */
+.custom-select-trigger:hover {
+  border-color: var(--retro-glow);
+  box-shadow: 0 0 10px var(--retro-glow);
+}
+
+.custom-select-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-track {
+  background: rgba(0, 20, 0, 0.8);
+  border: 1px solid var(--retro-green);
+}
+
+.custom-select-dropdown::-webkit-scrollbar-thumb {
+  background: var(--retro-dark-green);
+  border: 1px solid var(--retro-green);
+}
+
+.custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--retro-green);
+  box-shadow: 0 0 10px var(--retro-glow);
 }
 
 /* Selection styles */
@@ -276,33 +419,126 @@ img.chess-logo,
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
+  position: relative;
+  margin-bottom: 20px;
 }
 
+/* Overlapping label outlines field with cut label */
 .form-label {
-  font-size: 24px !important;
+  font-family: 'VT323', monospace;
+  font-size: 20px !important;
   letter-spacing: 1.5px !important;
+  color: var(--retro-green);
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 40, 0, 0.9),
+    rgba(0, 20, 0, 0.95)
+  );
+  padding: 0 8px;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .retro-select {
   font-family: 'VT323', monospace;
   font-size: 24px !important;
-  padding: 15px !important;
-  background: var(--retro-dark-green);
+  padding: 15px 12px !important;
+  background: transparent;
   color: var(--retro-green);
-  border: 3px solid var(--retro-green);
+  border: 2px solid var(--retro-green);
   border-radius: 0;
   letter-spacing: 1.5px !important;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  position: relative;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(0, 40, 0, 0.9),
+    rgba(0, 20, 0, 0.95)
+  );
 }
 
 .retro-select:focus {
   outline: none;
-  box-shadow: 0 0 15px var(--retro-glow);
+  border-color: var(--retro-glow);
+  box-shadow: 0 0 10px var(--retro-glow);
+}
+
+.retro-select:hover {
+  border-color: var(--retro-glow);
+}
+
+/* Custom dropdown arrow */
+.retro-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Mostrar flecha solo para selects */
+.retro-select-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--retro-green);
+  pointer-events: none;
+  font-size: 16px;
+}
+
+/* Solo mostrar flecha si contiene un select */
+.retro-select-wrapper:has(select)::after {
+  content: '▼';
+}
+
+/* Fallback: agregar clase específica para selects */
+.retro-select-wrapper.has-select::after {
+  content: '▼';
 }
 
 .retro-select option {
   background: var(--retro-dark-green);
   color: var(--retro-green);
+  padding: 10px;
+}
+
+/* Input fields con mismo estilo que selects */
+input.retro-select {
+  font-family: 'VT323', monospace;
+  font-size: 24px !important;
+  padding: 15px 12px !important;
+  background: transparent;
+  color: var(--retro-green);
+  border: 2px solid var(--retro-green);
+  border-radius: 0;
+  letter-spacing: 1.5px !important;
+  width: 100%;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(0, 40, 0, 0.9),
+    rgba(0, 20, 0, 0.95)
+  );
+}
+
+input.retro-select:focus {
+  outline: none;
+  border-color: var(--retro-glow);
+  box-shadow: 0 0 10px var(--retro-glow);
+}
+
+input.retro-select:hover {
+  border-color: var(--retro-glow);
+}
+
+/* Wrapper para inputs también */
+.retro-select-wrapper input.retro-select {
+  padding-right: 40px;
 }
 
 /* Move history */
@@ -405,8 +641,22 @@ img.chess-logo,
   }
   
   .retro-button {
-    font-size: 18px;
-    padding: 18px 22.5px;
+    font-size: 18px !important;
+    padding: 0 !important;
+  }
+  
+  .retro-button:not(:empty) {
+    padding: 8px 8px !important;
+  }
+  
+  .retro-button::before {
+    padding: 8px 2px 8px 8px !important;
+    min-width: 18px !important;
+  }
+  
+  .retro-button::after {
+    padding: 8px 8px 8px 2px !important;
+    min-width: 18px !important;
   }
   
   .status-line {
@@ -426,9 +676,23 @@ img.chess-logo,
   }
   
   .retro-button {
-    font-size: 16.5px;
-    padding: 15px 18px;
-    letter-spacing: 1.5px;
+    font-size: 16.5px !important;
+    padding: 0 !important;
+    letter-spacing: 1.5px !important;
+  }
+  
+  .retro-button:not(:empty) {
+    padding: 8px 8px !important;
+  }
+  
+  .retro-button::before {
+    padding: 8px 2px 8px 8px !important;
+    min-width: 18px !important;
+  }
+  
+  .retro-button::after {
+    padding: 8px 8px 8px 2px !important;
+    min-width: 18px !important;
   }
   
   .terminal-title {
@@ -501,8 +765,22 @@ img.chess-logo,
   }
   
   .retro-button {
-    font-size: 15px;
-    padding: 15px 18px;
+    font-size: 15px !important;
+    padding: 0 !important;
+  }
+  
+  .retro-button:not(:empty) {
+    padding: 8px 8px !important;
+  }
+  
+  .retro-button::before {
+    padding: 8px 2px 8px 8px !important;
+    min-width: 18px !important;
+  }
+  
+  .retro-button::after {
+    padding: 8px 8px 8px 2px !important;
+    min-width: 18px !important;
   }
   
   .board-label {
@@ -553,8 +831,22 @@ img.chess-logo,
   }
   
   .retro-button {
-    font-size: 15px;
-    padding: 13.5px 16.5px;
+    font-size: 15px !important;
+    padding: 0 !important;
+  }
+  
+  .retro-button:not(:empty) {
+    padding: 8px 8px !important;
+  }
+  
+  .retro-button::before {
+    padding: 8px 2px 8px 8px !important;
+    min-width: 18px !important;
+  }
+  
+  .retro-button::after {
+    padding: 8px 8px 8px 2px !important;
+    min-width: 18px !important;
   }
   
   .panel-content {
@@ -610,9 +902,23 @@ img.chess-logo,
   }
   
   .retro-button {
-    font-size: 13.5px;
-    padding: 12px 15px;
-    letter-spacing: 0.75px;
+    font-size: 13.5px !important;
+    padding: 0 !important;
+    letter-spacing: 0.75px !important;
+  }
+  
+  .retro-button:not(:empty) {
+    padding: 8px 8px !important;
+  }
+  
+  .retro-button::before {
+    padding: 8px 2px 8px 8px !important;
+    min-width: 18px !important;
+  }
+  
+  .retro-button::after {
+    padding: 8px 8px 8px 2px !important;
+    min-width: 18px !important;
   }
   
   .board-label {

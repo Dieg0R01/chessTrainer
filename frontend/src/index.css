@@ -20,10 +20,31 @@ body {
   font-size: 24px;
   background: var(--retro-bg);
   color: var(--retro-green);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   /* Animación de parpadeo sutil CRT */
   animation: flicker 8s linear infinite;
+}
+
+/* Scrollbar styling para body */
+body::-webkit-scrollbar {
+  width: 12px;
+}
+
+body::-webkit-scrollbar-track {
+  background: rgba(0, 20, 0, 0.8);
+  border: 1px solid var(--retro-green);
+}
+
+body::-webkit-scrollbar-thumb {
+  background: var(--retro-dark-green);
+  border: 2px solid var(--retro-green);
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: var(--retro-green);
+  box-shadow: 0 0 10px var(--retro-glow);
 }
 
 /* Efecto CRT con rayas */
@@ -110,9 +131,16 @@ h1, h2, h3, h4, h5, h6,
 .board-label,
 .footer-text,
 .terminal-title,
-button,
 select,
 option {
+  text-shadow: 
+    0 0 4.5px var(--retro-glow),
+    0 0 9px var(--retro-glow),
+    0 0 13.5px var(--retro-glow);
+}
+
+/* Los botones tienen su propio glow controlado por .retro-button */
+button:not(.retro-button) {
   text-shadow: 
     0 0 4.5px var(--retro-glow),
     0 0 9px var(--retro-glow),

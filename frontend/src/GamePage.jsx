@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { fetchBestMove } from './api';
+import { fetchBestMove, fetchStrategies } from './api';
+import CustomSelect from './CustomSelect';
 
 function GamePage() {
   const location = useLocation();
@@ -14,6 +15,10 @@ function GamePage() {
   const lastMoveWasEngineRef = useRef(false);
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [possibleMoves, setPossibleMoves] = useState({});
+  const [strategies, setStrategies] = useState({});
+  const [selectedStrategy, setSelectedStrategy] = useState(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [lastExplanation, setLastExplanation] = useState(null);
 
   const updateStatus = useCallback(() => {
     const game = gameRef.current;
@@ -64,11 +69,24 @@ function GamePage() {
       console.log(`📜 Historial de movimientos (UCI) enviado a ${engineName}:`, moveHistory);
       console.log(`📊 Total de movimientos en historial:`, historyVerbose.length);
       
+      // Preparar opciones para motores generativos
+      const options = {
+        move_history: moveHistory
+      };
+      
+      // Agregar estrategia si está seleccionada
+      if (selectedStrategy) {
+        options.strategy = selectedStrategy;
+      }
+      
+      // Agregar explicación si está habilitada
+      if (showExplanation) {
+        options.explanation = true;
+      }
+      
       // Obtener el movimiento del backend usando la API centralizada
       // Pasar move_history para que los motores generativos tengan contexto del juego
-      const data = await fetchBestMove(engineName, currentFen, 10, {
-        move_history: moveHistory
-      });
+      const data = await fetchBestMove(engineName, currentFen, 10, options);
       const bestMove = data.bestmove;
 
       if (bestMove) {
@@ -79,9 +97,14 @@ function GamePage() {
           setPosition(game.fen());
           updateStatus();
           
-          // Si hay explicación disponible (motores generativos), mostrarla en consola
+          // Si hay explicación disponible (motores generativos), guardarla
           if (data.explanation) {
             console.log(`Explicación del motor ${engineName}:`, data.explanation);
+            setLastExplanation({
+              engine: engineName,
+              explanation: data.explanation,
+              move: bestMove
+            });
           }
         } catch (error) {
           console.error("Error al aplicar movimiento del motor:", error);
@@ -96,7 +119,7 @@ function GamePage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, updateStatus]);
+  }, [isProcessing, updateStatus, selectedStrategy, showExplanation]);
 
   // Determinar qué motor debe jugar según el turno actual
   const getCurrentPlayer = useCallback(() => {
@@ -152,6 +175,18 @@ function GamePage() {
       return () => clearTimeout(timeoutId);
     }
   }, [position, isProcessing, getCurrentPlayer, makeEngineMove]);
+
+  // Cargar estrategias disponibles al montar
+  useEffect(() => {
+    fetchStrategies()
+      .then(data => {
+        setStrategies(data.strategies || {});
+        console.log('✅ Estrategias cargadas:', data);
+      })
+      .catch(error => {
+        console.warn('⚠️ No se pudieron cargar estrategias:', error);
+      });
+  }, []);
 
   useEffect(() => {
     console.log("GamePage montado.");
@@ -389,9 +424,42 @@ function GamePage() {
         <div className="control-panel">
           <div className="panel-border">
             <div className="panel-content">
-              <button className="retro-button glow" onClick={() => window.location.href = '/'}>
-                [ VOLVER A SELECCIÓN ]
+              <button className="retro-button glow" onClick={() => window.location.href = '/'} style={{ width: '100%', marginBottom: '10px' }}>
+                VOLVER A SELECCIÓN
               </button>
+
+              {/* Selector de estrategias para motores generativos */}
+              {Object.keys(strategies).length > 0 && (
+                <div className="form-group" style={{ marginBottom: '10px' }}>
+                  <label className="form-label glow">ESTRATEGIA (Generativos)</label>
+                  <CustomSelect
+                    value={selectedStrategy || ''}
+                    onChange={(value) => setSelectedStrategy(value || null)}
+                    placeholder="AUTO (por defecto)"
+                    options={[
+                      { value: '', label: 'AUTO (por defecto)' },
+                      ...Object.entries(strategies).map(([key, strategy]) => ({
+                        value: key,
+                        label: strategy.name || key
+                      }))
+                    ]}
+                  />
+                </div>
+              )}
+
+              {/* Checkbox para explicaciones */}
+              <div style={{ marginBottom: '10px', fontSize: '11px' }}>
+                <label style={{ color: '#0f0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <input
+                    type="checkbox"
+                    checked={showExplanation}
+                    onChange={(e) => setShowExplanation(e.target.checked)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  Solicitar explicación
+                </label>
+              </div>
+
               <div className="move-history">
                 <div className="history-title glow">▼ GAME STATUS:</div>
                 <div className="history-content">
@@ -400,6 +468,21 @@ function GamePage() {
                   </div>
                 </div>
               </div>
+
+              {/* Mostrar última explicación si existe */}
+              {lastExplanation && (
+                <div className="move-history" style={{ marginTop: '10px' }}>
+                  <div className="history-title glow">▼ EXPLICACIÓN ({lastExplanation.engine}):</div>
+                  <div className="history-content">
+                    <div className="history-item" style={{ fontSize: '10px' }}>
+                      <strong>Movimiento:</strong> {lastExplanation.move}
+                    </div>
+                    <div className="history-item" style={{ fontSize: '10px', color: '#aaa' }}>
+                      {lastExplanation.explanation}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
