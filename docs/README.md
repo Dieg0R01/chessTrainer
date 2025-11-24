@@ -57,6 +57,19 @@ Guías y ejemplos para desarrolladores.
   - Testing con mocks
   - Personalización de prompts
 
+- **[API_USAGE.md](development/API_USAGE.md)** - Documentación completa de APIs
+  - Todos los endpoints del backend
+  - Funciones del frontend
+  - Flujos de datos
+  - Ejemplos de uso
+
+- **[COMPARACION_MOTORES.md](development/COMPARACION_MOTORES.md)** - Página de Comparación
+  - Funcionalidad completa de comparación
+  - Edición interactiva del tablero
+  - Visualización de resultados
+  - Manejo de errores
+  - Ejemplos de uso
+
 - **[class_diagram_mermaid.md](development/class_diagram_mermaid.md)** - Diagrama de clases UML
   - Diagrama completo en Mermaid
   - Relaciones entre clases
@@ -130,14 +143,17 @@ Diagramas visuales de la arquitectura.
 2. Lee la [Arquitectura completa](architecture/ARQUITECTURA.md)
 3. Revisa los [Patrones de diseño](architecture/patrones_diseño.md)
 4. Explora los [Ejemplos de uso](development/EJEMPLO_USO_PROTOCOLOS.md)
-5. Visualiza el [Diagrama de clases](development/class_diagram_mermaid.md)
+5. Consulta la [Documentación de APIs](development/API_USAGE.md)
+6. Visualiza el [Diagrama de clases](development/class_diagram_mermaid.md)
 
 ### Para Extender el Sistema
 
 1. Revisa la [Arquitectura de protocolos](architecture/REFACTORIZACION_PROTOCOLOS.md)
 2. Consulta los [Ejemplos prácticos](development/EJEMPLO_USO_PROTOCOLOS.md)
 3. Estudia los [Patrones de diseño](architecture/patrones_diseño.md)
-4. Revisa el código fuente en los módulos correspondientes
+4. Revisa la [Documentación de APIs](development/API_USAGE.md)
+5. Consulta la [Documentación de Comparación](development/COMPARACION_MOTORES.md) para entender funcionalidades avanzadas
+6. Revisa el código fuente en los módulos correspondientes
 
 ### Para Desplegar
 

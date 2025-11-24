@@ -34,7 +34,7 @@ function EnginesMatrixPage() {
   };
 
   return (
-    <div className="retro-container">
+    <div className="retro-container matrix-page">
       <div className="terminal-header">
         <div className="terminal-title glow">
           ═══════════════════════════════════════
@@ -49,11 +49,11 @@ function EnginesMatrixPage() {
         <div className="system-panel">
           <div className="panel-border">
             <div className="panel-content">
-              <div className="status-line">
+              <div className="status-line matrix-status-line">
                 <span className="blink">&gt;</span> MODO: ANÁLISIS
               </div>
               {matrix && (
-                <div className="status-line">
+                <div className="status-line matrix-status-line">
                   <span className="blink">&gt;</span> MOTORES: {matrix.count}
                 </div>
               )}
@@ -61,23 +61,24 @@ function EnginesMatrixPage() {
           </div>
         </div>
 
-        <div className="board-container">
-          <div className="board-frame">
-            <div className="board-inner" style={{ padding: '20px', overflow: 'auto' }}>
-              {isLoading ? (
-                <div className="history-item blink">_ CARGANDO MATRIZ...</div>
-              ) : error ? (
-                <div className="history-item" style={{ color: '#ff4444' }}>
-                  ⚠ ERROR: {error}
-                </div>
-              ) : matrix && matrix.matrix ? (
+        <div className="board-container matrix-board-container">
+          <div className="board-frame selection-mode matrix-board-frame">
+            <div className="board-inner selection-mode matrix-board-inner">
+              <div className="matrix-board-content">
+                {isLoading ? (
+                  <div className="history-item blink">_ CARGANDO MATRIZ...</div>
+                ) : error ? (
+                  <div className="history-item" style={{ color: '#ff4444' }}>
+                    ⚠ ERROR: {error}
+                  </div>
+                ) : matrix && matrix.matrix ? (
                 <div>
-                  <div style={{ marginBottom: '20px' }}>
-                    <h3 className="glow" style={{ marginBottom: '10px' }}>LEGENDA:</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12px' }}>
-                      <div>
+                  <div className="matrix-legend">
+                    <h3 className="glow">LEGENDA:</h3>
+                    <div className="matrix-legend-grid">
+                      <div className="matrix-legend-block">
                         <strong>TIPOS:</strong>
-                        <div style={{ marginTop: '5px' }}>
+                        <div>
                           <span style={{ color: '#4a90e2' }}>■</span> Traditional
                           <br />
                           <span style={{ color: '#e24a4a' }}>■</span> Neuronal
@@ -85,9 +86,9 @@ function EnginesMatrixPage() {
                           <span style={{ color: '#4ae2a0' }}>■</span> Generative
                         </div>
                       </div>
-                      <div>
+                      <div className="matrix-legend-block">
                         <strong>ORIGEN:</strong>
-                        <div style={{ marginTop: '5px' }}>
+                        <div>
                           <span style={{ color: '#90e24a' }}>■</span> Internal
                           <br />
                           <span style={{ color: '#e2a04a' }}>■</span> External
@@ -96,36 +97,37 @@ function EnginesMatrixPage() {
                     </div>
                   </div>
 
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid #0f0' }}>
-                        <th style={{ padding: '8px', textAlign: 'left', color: '#0f0' }}>MOTOR</th>
-                        <th style={{ padding: '8px', textAlign: 'left', color: '#0f0' }}>TIPO</th>
-                        <th style={{ padding: '8px', textAlign: 'left', color: '#0f0' }}>ORIGEN</th>
-                        <th style={{ padding: '8px', textAlign: 'left', color: '#0f0' }}>VALIDACIÓN</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {matrix.matrix.map((row, index) => (
-                        <tr key={index} style={{ borderBottom: '1px solid #0a0' }}>
-                          <td style={{ padding: '8px', color: '#0f0' }}>
-                            <strong>{row.name}</strong>
-                          </td>
-                          <td style={{ padding: '8px', color: getTypeColor(row.type) }}>
-                            {row.type}
-                          </td>
-                          <td style={{ padding: '8px', color: getOriginColor(row.origin) }}>
-                            {row.origin}
-                          </td>
-                          <td style={{ padding: '8px', color: '#aaa' }}>
-                            {row.validation_mode}
-                          </td>
+                    <table className="matrix-table">
+                      <thead>
+                        <tr>
+                          <th>MOTOR</th>
+                          <th>TIPO</th>
+                          <th>ORIGEN</th>
+                          <th>VALIDACIÓN</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
+                      </thead>
+                      <tbody>
+                        {matrix.matrix.map((row, index) => (
+                          <tr key={index}>
+                            <td>
+                              <strong>{row.name}</strong>
+                            </td>
+                            <td style={{ color: getTypeColor(row.type) }}>
+                              {row.type}
+                            </td>
+                            <td style={{ color: getOriginColor(row.origin) }}>
+                              {row.origin}
+                            </td>
+                            <td style={{ color: '#aaa' }}>
+                              {row.validation_mode}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
+              </div>
             </div>
             <div className="board-label glow">MATRIX.SYS v1.0</div>
           </div>

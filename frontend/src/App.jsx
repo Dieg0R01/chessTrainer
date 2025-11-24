@@ -171,9 +171,9 @@ function SelectionPage() {
             alt="Chess Logo" 
             className="chess-logo"
             style={{ 
-              width: '321px', 
+              width: '200px', 
               height: 'auto', 
-              maxWidth: '321px', 
+              maxWidth: '200px', 
               margin: '0 auto',
               display: 'block'
             }}
@@ -216,8 +216,8 @@ function SelectionPage() {
 
         {/* Selection form container */}
         <div className="board-container">
-          <div className="board-frame">
-            <div className="board-inner">
+          <div className="board-frame selection-mode">
+            <div className="board-inner selection-mode">
               <div className="selection-form">
                 {/* Filtros */}
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>

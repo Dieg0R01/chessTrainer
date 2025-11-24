@@ -425,17 +425,51 @@ async def compare_engines(compare_request: CompareRequest):
     """
     Compara las sugerencias de todos los motores disponibles para una posición.
     Útil para análisis y comparación de diferentes enfoques.
+    
+    Devuelve un array de resultados con la estructura:
+    [
+        {
+            "engine": "nombre_motor",
+            "bestmove": "e2e4",
+            "explanation": "explicación opcional"
+        },
+        ...
+    ]
     """
     try:
-        results = await engine_manager.compare_engines(
+        # Obtener resultados como diccionario {engine_name: move}
+        results_dict = await engine_manager.compare_engines(
             compare_request.fen,
             compare_request.depth
         )
         
+        # Convertir diccionario a array de objetos con formato estándar
+        results_array = []
+        for engine_name, bestmove in results_dict.items():
+            result_item = {
+                "engine": engine_name,
+                "bestmove": bestmove,
+                "explanation": None
+            }
+            
+            # Intentar obtener explicación si el motor la tiene disponible
+            # (principalmente para motores generativos)
+            try:
+                engine = engine_manager.get_engine(engine_name)
+                if hasattr(engine, 'get_last_explanation'):
+                    explanation = engine.get_last_explanation()
+                    if explanation:
+                        result_item["explanation"] = explanation
+            except Exception as e:
+                # Si no se puede obtener explicación, continuar sin ella
+                logger.debug(f"No se pudo obtener explicación para {engine_name}: {e}")
+            
+            results_array.append(result_item)
+        
         return {
             "fen": compare_request.fen,
-            "results": results,
-            "engines_compared": len(results)
+            "results": results_array,
+            "engines_compared": len(results_array)
         }
     except Exception as e:
         logger.error(f"Error comparando motores: {e}")

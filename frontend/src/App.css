@@ -1,72 +1,22 @@
 .retro-container {
   width: 90vw;
-  max-width: 2100px;
-  max-height: 100vh;
+  max-width: 700px;
+  min-height: calc(100vh - 40px);
   height: auto;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 40, 0, 0.9),
-    rgba(0, 20, 0, 0.95)
-  );
-  border: 4.5px solid var(--retro-green);
-  border-radius: 15px;
-  padding: 30px;
-  box-shadow: 
-    0 0 30px var(--retro-glow),
-    inset 0 0 45px rgba(0, 0, 0, 0.5);
+  background: var(--retro-bg);
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 22.5px;
-  contain: layout style;
-  will-change: auto;
-  overflow-y: auto;
+  gap: 20px;
   overflow-x: hidden;
-}
-
-/* Scrollbar styling */
-.retro-container::-webkit-scrollbar {
-  width: 12px;
-}
-
-.retro-container::-webkit-scrollbar-track {
-  background: rgba(0, 20, 0, 0.8);
-  border: 1px solid var(--retro-green);
-}
-
-.retro-container::-webkit-scrollbar-thumb {
-  background: var(--retro-dark-green);
-  border: 2px solid var(--retro-green);
-}
-
-.retro-container::-webkit-scrollbar-thumb:hover {
-  background: var(--retro-green);
-  box-shadow: 0 0 10px var(--retro-glow);
-}
-
-/* Responsive height */
-@media (max-width: 1920px) {
-  .retro-container {
-    max-height: 100vh;
-  }
-}
-
-@media (max-width: 1600px) {
-  .retro-container {
-    max-height: 100vh;
-  }
-}
-
-@media (max-width: 1366px) {
-  .retro-container {
-    max-height: 100vh;
-  }
 }
 
 /* Header */
 .terminal-header {
   text-align: center;
   padding: 15px 0;
-  border-bottom: 3px solid var(--retro-border);
+  border-bottom: 1px solid var(--retro-green);
+  flex-shrink: 0;
 }
 
 /* Chess Logo */
@@ -84,54 +34,61 @@
 .chess-logo-container img.chess-logo,
 img.chess-logo,
 .chess-logo {
-  width: 321px !important;
-  max-width: 321px !important;
-  min-width: 321px !important;
+  width: 200px !important;
+  max-width: 200px !important;
+  min-width: 200px !important;
   height: auto !important;
   display: block !important;
   margin: 0 auto !important;
   padding: 0 !important;
-  flex-shrink: 0 !important;
-  flex-grow: 0 !important;
-  position: relative !important;
-  left: 0 !important;
-  right: 0 !important;
-  filter: drop-shadow(0 0 18px #33ff33) drop-shadow(0 0 37.5px #33ff33);
-  animation: logo-pulse 2s ease-in-out infinite;
-}
-
-@keyframes logo-pulse {
-  0%, 100% {
-    filter: drop-shadow(0 0 18px #33ff33) drop-shadow(0 0 37.5px #33ff33);
-    transform: scale(1);
-  }
-  50% {
-    filter: drop-shadow(0 0 27px #33ff33) drop-shadow(0 0 52.5px #33ff33);
-    transform: scale(1.05);
-  }
+  filter: brightness(1.2);
 }
 
 .terminal-title {
-  font-size: 21px !important;
-  letter-spacing: 3px !important;
+  font-size: 16px !important;
+  letter-spacing: 2px !important;
 }
 
 .main-title {
   font-family: 'Press Start 2P', monospace;
-  font-size: 36px !important;
-  margin: 15px 0 !important;
-  letter-spacing: 4.5px !important;
+  font-size: 24px !important;
+  margin: 10px 0 !important;
+  letter-spacing: 3px !important;
 }
 
 /* Content wrapper */
 .content-wrapper {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(330px, 1fr) minmax(600px, 2fr) minmax(330px, 1fr);
-  gap: 30px;
-  overflow-y: auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   overflow-x: hidden;
   min-height: 0;
+  width: 100%;
+  align-items: stretch;
+}
+
+/* En resoluciones mayores a móvil, reducir espacio inferior */
+@media (min-width: 769px) {
+  .content-wrapper {
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+  
+  .board-container {
+    align-items: flex-start;
+    flex: 0 1 auto;
+  }
+  
+  .board-frame.selection-mode {
+    max-height: fit-content;
+    height: auto;
+  }
+  
+  .panel-content {
+    max-height: 300px;
+    overflow-y: auto;
+  }
 }
 
 /* Panels */
@@ -143,27 +100,24 @@ img.chess-logo,
 }
 
 .panel-border {
-  border: 3px solid var(--retro-border);
-  background: rgba(0, 0, 0, 0.5);
-  padding: 3px;
+  border: 1px solid var(--retro-green);
+  background: var(--retro-bg);
+  padding: 0;
   flex: 1;
-  box-shadow: 
-    inset 0 0 15px rgba(51, 255, 51, 0.1),
-    0 0 15px rgba(51, 255, 51, 0.1);
 }
 
 .panel-content {
-  border: 1.5px solid var(--retro-green);
-  padding: 22.5px;
-  height: 100%;
+  padding: 10px;
+  max-height: 250px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
+  overflow-y: auto;
 }
 
 .status-line {
-  font-size: 27px !important;
-  margin: 12px 0 !important;
+  font-size: 20px !important;
+  margin: 5px 0 !important;
   letter-spacing: 1.5px !important;
 }
 
@@ -174,56 +128,129 @@ img.chess-logo,
   justify-content: center;
   min-height: 0;
   width: 100%;
-  height: 100%;
-  /* Prevenir cambios de layout durante interacciones */
-  contain: layout style;
+  flex: 1;
 }
 
 .board-frame {
   position: relative;
-  width: 600px;
-  height: 600px;
-  padding: 22.5px;
-  background: rgba(0, 0, 0, 0.7);
-  border: 4.5px solid var(--retro-green);
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  padding: 20px;
+  background: var(--retro-bg);
+  border: 1px solid var(--retro-green);
   box-sizing: border-box;
-  box-shadow: 
-    0 0 30px var(--retro-glow),
-    inset 0 0 30px rgba(0, 0, 0, 0.8);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  /* Estabilizar el frame del tablero con tamaño fijo */
-  contain: layout style;
-  will-change: auto;
-  /* Prevenir cambios de tamaño durante interacciones */
-  min-width: 600px;
-  min-height: 600px;
-  max-width: 600px;
-  max-height: 600px;
-  /* Forzar estabilidad del layout */
-  flex-shrink: 0;
-  flex-grow: 0;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 0;
+  flex-shrink: 1;
+  flex-grow: 1;
+  margin: 0 auto;
+}
+
+/* En modo selección, el board-frame no tiene aspect-ratio */
+.board-frame.selection-mode {
+  aspect-ratio: auto;
+  min-height: fit-content;
+}
+
+/* En modo juego, mantener aspect-ratio para el tablero */
+.board-frame.game-mode {
+  aspect-ratio: 1;
 }
 
 .board-inner {
-  border: 3px solid var(--retro-border);
-  padding: 7.5px;
-  background: var(--retro-dark-green);
+  border: 1px solid var(--retro-green);
+  padding: 20px;
+  background: var(--retro-bg);
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Estabilizar el contenido interno */
-  contain: layout style;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
+  width: 100%;
+  height: 100%;
+}
+
+/* En modo selección, centrar mejor el contenido */
+.board-inner.selection-mode {
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 30px;
+  padding-bottom: 30px;
+  min-height: fit-content;
 }
 
 /* Estilos específicos para el componente Chessboard */
-.board-inner > div {
-  /* Prevenir cambios de tamaño del tablero */
+.board-inner.game-mode > div {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Tablet y resoluciones intermedias */
+@media (min-width: 481px) and (max-width: 1024px) {
+  .board-frame.game-mode {
+    max-width: 100%;
+    padding: 15px;
+  }
+  
+  .board-inner.game-mode {
+    padding: 15px;
+  }
+  
+  .board-inner.game-mode > div {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: 1;
+  }
+  
+  .board-inner.game-mode .chess-board {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+  }
+  
+  .board-inner.game-mode .chess-square {
+    width: 75px !important;
+    height: 75px !important;
+  }
+}
+
+/* En desktop, tamaño fijo para el tablero: 8 casillas * 75px = 600px */
+@media (min-width: 1025px) {
+  .board-inner.game-mode {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  
+  .board-inner.game-mode > div {
+    width: 600px !important;
+    height: 600px !important;
+    max-width: 600px !important;
+    max-height: 600px !important;
+  }
+  
+  .board-inner.game-mode .chess-square {
+    width: 75px !important;
+    height: 75px !important;
+  }
+}
+
+/* Estilos para las casillas del tablero */
+.board-inner .chess-board {
   width: 100% !important;
   height: 100% !important;
   max-width: 100% !important;
@@ -231,15 +258,10 @@ img.chess-logo,
   contain: layout style;
 }
 
-/* Estilos para las casillas del tablero */
-.board-inner .chess-board {
-  width: 100% !important;
-  height: 100% !important;
-  contain: layout style;
-}
-
 .board-inner .chess-square {
   contain: layout style;
+  width: 75px !important;
+  height: 75px !important;
 }
 
 .board-label {
@@ -247,6 +269,135 @@ img.chess-logo,
   margin-top: 15px;
   font-size: 24px !important;
   letter-spacing: 4.5px !important;
+  display: none;
+}
+
+/* Matrix page overrides */
+.matrix-page .content-wrapper {
+  gap: 22.5px;
+}
+
+.matrix-page .board-container {
+  align-items: stretch;
+}
+
+.matrix-board-frame {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 100%;
+  justify-content: flex-start;
+}
+
+.matrix-board-inner {
+  padding: 24px;
+  background: rgba(0, 10, 0, 0.85);
+  border: 2px solid var(--retro-green);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: auto;
+}
+
+.matrix-board-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.matrix-status-line {
+  font-size: 30px !important;
+  letter-spacing: 3px !important;
+}
+
+.matrix-legend {
+  margin-bottom: 10px;
+}
+
+.matrix-legend h3 {
+  margin-bottom: 12px;
+  font-size: 21px !important;
+}
+
+.matrix-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.matrix-legend-block strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 19px;
+  letter-spacing: 1px;
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.matrix-table th,
+.matrix-table td {
+  font-size: 20px;
+  padding: 14px 12px;
+  letter-spacing: 1px;
+  text-align: left;
+}
+
+.matrix-table th {
+  color: var(--retro-green);
+  font-weight: 700;
+}
+
+.matrix-table thead tr {
+  border-bottom: 2px solid var(--retro-green);
+}
+
+.matrix-table tbody tr {
+  border-bottom: 1px solid rgba(0, 255, 0, 0.35);
+}
+
+.matrix-page .board-label {
+  display: none;
+}
+
+/* Comparison page overrides */
+.compare-page .board-frame {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0 auto;
+}
+
+.compare-board-inner {
+  padding: 6px;
+  background: rgba(0, 10, 0, 0.9);
+  border: 2px solid var(--retro-green);
+  width: calc(75px * 8);
+  height: calc(75px * 8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: content-box;
+  overflow: hidden;
+}
+
+.compare-board-inner > div,
+.compare-board-inner .chess-board {
+  width: calc(75px * 8) !important;
+  height: calc(75px * 8) !important;
+}
+
+.compare-board-inner .chess-square {
+  width: 75px !important;
+  height: 75px !important;
 }
 
 /* Control panel - Botones estilo corchetes */
@@ -333,21 +484,18 @@ button.retro-button:not(:empty),
 }
 
 .retro-button:hover {
-  color: var(--retro-glow) !important;
-  text-shadow: 0 0 10px var(--retro-glow);
+  color: var(--retro-green) !important;
   background: transparent !important;
 }
 
 .retro-button:hover::before {
-  border-color: var(--retro-glow);
-  color: var(--retro-glow);
-  box-shadow: 0 0 10px var(--retro-glow);
+  border-color: var(--retro-green);
+  color: var(--retro-green);
 }
 
 .retro-button:hover::after {
-  border-color: var(--retro-glow);
-  color: var(--retro-glow);
-  box-shadow: 0 0 10px var(--retro-glow);
+  border-color: var(--retro-green);
+  color: var(--retro-green);
 }
 
 .retro-button:active {
@@ -386,8 +534,7 @@ button.retro-button:not(:empty),
 
 /* Custom Select Styles */
 .custom-select-trigger:hover {
-  border-color: var(--retro-glow);
-  box-shadow: 0 0 10px var(--retro-glow);
+  border-color: var(--retro-green);
 }
 
 .custom-select-dropdown::-webkit-scrollbar {
@@ -396,24 +543,24 @@ button.retro-button:not(:empty),
 
 .custom-select-dropdown::-webkit-scrollbar-track {
   background: rgba(0, 20, 0, 0.8);
-  border: 1px solid var(--retro-green);
 }
 
 .custom-select-dropdown::-webkit-scrollbar-thumb {
   background: var(--retro-dark-green);
-  border: 1px solid var(--retro-green);
 }
 
 .custom-select-dropdown::-webkit-scrollbar-thumb:hover {
   background: var(--retro-green);
-  box-shadow: 0 0 10px var(--retro-glow);
 }
 
 /* Selection styles */
 .selection-form {
   display: flex;
   flex-direction: column;
-  gap: 22.5px;
+  gap: 15px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .form-group {
@@ -421,7 +568,7 @@ button.retro-button:not(:empty),
   flex-direction: column;
   gap: 0;
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 /* Overlapping label outlines field with cut label */
@@ -433,11 +580,7 @@ button.retro-button:not(:empty),
   position: absolute;
   top: -10px;
   left: 12px;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 40, 0, 0.9),
-    rgba(0, 20, 0, 0.95)
-  );
+  background: var(--retro-bg);
   padding: 0 8px;
   z-index: 1;
   pointer-events: none;
@@ -445,11 +588,11 @@ button.retro-button:not(:empty),
 
 .retro-select {
   font-family: 'VT323', monospace;
-  font-size: 24px !important;
-  padding: 15px 12px !important;
-  background: transparent;
+  font-size: 20px !important;
+  padding: 10px 12px !important;
+  background: var(--retro-bg);
   color: var(--retro-green);
-  border: 2px solid var(--retro-green);
+  border: 1px solid var(--retro-green);
   border-radius: 0;
   letter-spacing: 1.5px !important;
   width: 100%;
@@ -457,21 +600,15 @@ button.retro-button:not(:empty),
   -webkit-appearance: none;
   -moz-appearance: none;
   position: relative;
-  background-image: linear-gradient(
-    to bottom,
-    rgba(0, 40, 0, 0.9),
-    rgba(0, 20, 0, 0.95)
-  );
 }
 
 .retro-select:focus {
   outline: none;
-  border-color: var(--retro-glow);
-  box-shadow: 0 0 10px var(--retro-glow);
+  border-color: var(--retro-green);
 }
 
 .retro-select:hover {
-  border-color: var(--retro-glow);
+  border-color: var(--retro-green);
 }
 
 /* Custom dropdown arrow */
@@ -511,29 +648,23 @@ button.retro-button:not(:empty),
 /* Input fields con mismo estilo que selects */
 input.retro-select {
   font-family: 'VT323', monospace;
-  font-size: 24px !important;
-  padding: 15px 12px !important;
-  background: transparent;
+  font-size: 20px !important;
+  padding: 10px 12px !important;
+  background: var(--retro-bg);
   color: var(--retro-green);
-  border: 2px solid var(--retro-green);
+  border: 1px solid var(--retro-green);
   border-radius: 0;
   letter-spacing: 1.5px !important;
   width: 100%;
-  background-image: linear-gradient(
-    to bottom,
-    rgba(0, 40, 0, 0.9),
-    rgba(0, 20, 0, 0.95)
-  );
 }
 
 input.retro-select:focus {
   outline: none;
-  border-color: var(--retro-glow);
-  box-shadow: 0 0 10px var(--retro-glow);
+  border-color: var(--retro-green);
 }
 
 input.retro-select:hover {
-  border-color: var(--retro-glow);
+  border-color: var(--retro-green);
 }
 
 /* Wrapper para inputs también */
@@ -558,12 +689,10 @@ input.retro-select:hover {
 .history-content {
   flex: 1;
   overflow-y: auto;
-  border: 1.5px solid var(--retro-border);
+  border: 1px solid var(--retro-green);
   padding: 15px;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--retro-bg);
   font-size: 24px !important;
-  /* Estabilizar el contenido del historial */
-  contain: layout style;
   min-height: 90px;
 }
 
@@ -593,7 +722,8 @@ input.retro-select:hover {
 .terminal-footer {
   text-align: center;
   padding: 15px 0;
-  border-top: 3px solid var(--retro-border);
+  border-top: 1px solid var(--retro-green);
+  flex-shrink: 0;
 }
 
 .footer-text {
@@ -601,341 +731,144 @@ input.retro-select:hover {
   letter-spacing: 3px !important;
 }
 
-/* Responsive design */
-
-/* Desktop grande - ajustes sutiles */
-@media (max-width: 2100px) {
-  .content-wrapper {
-    grid-template-columns: minmax(300px, 1fr) minmax(525px, 2fr) minmax(300px, 1fr);
-    gap: 22.5px;
-  }
-  
-  .board-frame {
-    width: 525px;
-    height: 525px;
-    min-width: 525px;
-    min-height: 525px;
-    max-width: 525px;
-    max-height: 525px;
-  }
-}
-
-/* Desktop mediano - paneles más pequeños */
-@media (max-width: 1800px) {
-  .content-wrapper {
-    grid-template-columns: minmax(270px, 1fr) minmax(450px, 2fr) minmax(270px, 1fr);
-    gap: 22.5px;
-  }
-  
-  .board-frame {
-    width: 450px;
-    height: 450px;
-    min-width: 450px;
-    min-height: 450px;
-    max-width: 450px;
-    max-height: 450px;
+/* Responsive design - Móviles */
+@media (max-width: 480px) {
+  .retro-container {
+    width: 95vw;
+    max-width: 100%;
+    padding: 15px;
   }
   
   .main-title {
-    font-size: 30px;
-  }
-  
-  .retro-button {
     font-size: 18px !important;
-    padding: 0 !important;
-  }
-  
-  .retro-button:not(:empty) {
-    padding: 8px 8px !important;
-  }
-  
-  .retro-button::before {
-    padding: 8px 2px 8px 8px !important;
-    min-width: 18px !important;
-  }
-  
-  .retro-button::after {
-    padding: 8px 8px 8px 2px !important;
-    min-width: 18px !important;
-  }
-  
-  .status-line {
-    font-size: 24px;
-  }
-}
-
-/* Laptop pequeño - más compacto */
-@media (max-width: 1536px) {
-  .content-wrapper {
-    grid-template-columns: minmax(240px, 1fr) minmax(420px, 2fr) minmax(240px, 1fr);
-    gap: 18px;
-  }
-  
-  .main-title {
-    font-size: 27px;
-  }
-  
-  .retro-button {
-    font-size: 16.5px !important;
-    padding: 0 !important;
-    letter-spacing: 1.5px !important;
-  }
-  
-  .retro-button:not(:empty) {
-    padding: 8px 8px !important;
-  }
-  
-  .retro-button::before {
-    padding: 8px 2px 8px 8px !important;
-    min-width: 18px !important;
-  }
-  
-  .retro-button::after {
-    padding: 8px 8px 8px 2px !important;
-    min-width: 18px !important;
   }
   
   .terminal-title {
-    font-size: 18px;
+    font-size: 14px !important;
+  }
+  
+  .status-line {
+    font-size: 18px !important;
+  }
+  
+  .retro-select {
+    font-size: 18px !important;
   }
   
   .panel-content {
-    padding: 18px;
-  }
-}
-
-/* Tablets - cambio a layout vertical */
-@media (max-width: 1152px) {
-  .content-wrapper {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(180px, 20vh) 1fr minmax(210px, 25vh);
-    gap: 18px;
+    padding: 8px;
+    max-height: 200px;
   }
   
-  .system-panel,
-  .control-panel {
-    min-height: 0;
+  /* Tablero en modo juego - más pequeño pero manteniendo proporción */
+  .board-frame.game-mode {
+    max-width: 100%;
+    padding: 10px;
+    aspect-ratio: 1;
+    max-height: min(70vh, calc(100vw - 50px));
     overflow: hidden;
-  }
-  
-  .panel-border {
-    overflow-y: auto;
-    height: 100%;
-  }
-  
-  .panel-content {
-    height: 100%;
-    overflow-y: auto;
+    flex-grow: 0;
   }
   
   .board-container {
-    min-height: 0;
+    flex: 0 1 auto;
+    align-items: center;
+  }
+  
+  .board-inner.game-mode {
+    padding: 10px;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    height: 100%;
   }
   
-  .board-frame {
-    width: auto;
-    height: min(95%, 100%);
-    max-height: 100%;
-    aspect-ratio: 1 / 1;
-    padding: 18px;
+  .board-inner.game-mode > div {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: 1;
+    margin: 0 auto;
+    position: relative;
   }
   
+  .board-inner.game-mode .chess-board {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+  }
+  
+  .board-inner.game-mode .chess-square {
+    width: 75px !important;
+    height: 75px !important;
+  }
+  
+  /* En modo selección, comportamiento normal */
+  .board-frame.selection-mode {
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .board-inner.selection-mode {
+    overflow: visible;
+  }
+}
+
+/* Tablets pequeñas y móviles grandes */
+@media (min-width: 481px) and (max-width: 768px) {
   .retro-container {
     width: 95vw;
-    height: 95vh;
-    padding: 18px;
-    gap: 18px;
+    max-width: 100%;
+    padding: 15px;
   }
   
-  .main-title {
-    font-size: 27px;
-  }
-  
-  .terminal-title {
-    font-size: 16.5px;
-  }
-  
-  .status-line {
-    font-size: 22.5px;
-    margin: 9px 0;
-  }
-  
-  .retro-button {
-    font-size: 15px !important;
-    padding: 0 !important;
-  }
-  
-  .retro-button:not(:empty) {
-    padding: 8px 8px !important;
-  }
-  
-  .retro-button::before {
-    padding: 8px 2px 8px 8px !important;
-    min-width: 18px !important;
-  }
-  
-  .retro-button::after {
-    padding: 8px 8px 8px 2px !important;
-    min-width: 18px !important;
-  }
-  
-  .board-label {
-    font-size: 21px;
-  }
-  
-  .move-history {
-    flex: 1;
-    min-height: 0;
+  .board-frame.game-mode {
+    max-width: 100%;
+    padding: 12px;
+    aspect-ratio: 1;
+    max-height: min(75vh, calc(100vw - 40px));
     overflow: hidden;
+    flex-grow: 0;
   }
   
-  .history-content {
-    overflow-y: auto;
-    max-height: 100%;
-  }
-}
-
-/* Móviles grandes */
-@media (max-width: 900px) {
-  .content-wrapper {
-    grid-template-rows: minmax(150px, 18vh) 1fr minmax(180px, 22vh);
+  .board-container {
+    flex: 0 1 auto;
+    align-items: center;
   }
   
-  .board-frame {
-    width: auto;
-    height: min(92%, 100%);
-    max-height: 100%;
-    padding: 15px;
-  }
-  
-  .retro-container {
-    padding: 15px;
-    gap: 15px;
-  }
-  
-  .main-title {
-    font-size: 24px;
-  }
-  
-  .terminal-title {
-    font-size: 15px;
-  }
-  
-  .status-line {
-    font-size: 21px;
-    margin: 7.5px 0;
-  }
-  
-  .retro-button {
-    font-size: 15px !important;
-    padding: 0 !important;
-  }
-  
-  .retro-button:not(:empty) {
-    padding: 8px 8px !important;
-  }
-  
-  .retro-button::before {
-    padding: 8px 2px 8px 8px !important;
-    min-width: 18px !important;
-  }
-  
-  .retro-button::after {
-    padding: 8px 8px 8px 2px !important;
-    min-width: 18px !important;
-  }
-  
-  .panel-content {
-    padding: 15px;
-    gap: 12px;
-  }
-  
-  .history-title {
-    font-size: 21px;
-  }
-  
-  .history-content {
-    font-size: 21px;
-  }
-}
-
-/* Móviles pequeños */
-@media (max-width: 720px) {
-  .content-wrapper {
-    grid-template-rows: minmax(135px, 16vh) 1fr minmax(165px, 20vh);
-    gap: 12px;
-  }
-  
-  .board-frame {
-    width: auto;
-    height: min(90%, 100%);
-    max-height: 100%;
+  .board-inner.game-mode {
     padding: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
   
-  .board-inner {
-    padding: 6px;
+  .board-inner.game-mode > div {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: 1;
+    margin: 0 auto;
+    position: relative;
   }
   
-  .retro-container {
-    width: 98vw;
-    height: 98vh;
-    padding: 12px;
-    gap: 12px;
+  .board-inner.game-mode .chess-board {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
   }
   
-  .main-title {
-    font-size: 21px;
-  }
-  
-  .terminal-title {
-    font-size: 13.5px;
-  }
-  
-  .status-line {
-    font-size: 19.5px;
-    margin: 6px 0;
-  }
-  
-  .retro-button {
-    font-size: 13.5px !important;
-    padding: 0 !important;
-    letter-spacing: 0.75px !important;
-  }
-  
-  .retro-button:not(:empty) {
-    padding: 8px 8px !important;
-  }
-  
-  .retro-button::before {
-    padding: 8px 2px 8px 8px !important;
-    min-width: 18px !important;
-  }
-  
-  .retro-button::after {
-    padding: 8px 8px 8px 2px !important;
-    min-width: 18px !important;
-  }
-  
-  .board-label {
-    font-size: 18px;
-    margin-top: 9px;
-  }
-  
-  .panel-content {
-    padding: 12px;
-    gap: 9px;
-  }
-  
-  .history-title {
-    font-size: 18px;
-  }
-  
-  .history-content {
-    font-size: 18px;
+  .board-inner.game-mode .chess-square {
+    width: 75px !important;
+    height: 75px !important;
   }
 }

@@ -196,7 +196,13 @@ class EngineManager:
         
         for name, engine in self.engines.items():
             try:
-                move = await engine.get_move(fen, depth)
+                # Para motores generativos, solicitar explicación automáticamente
+                # Verificar si el motor soporta explicaciones
+                kwargs = {}
+                if hasattr(engine, 'get_last_explanation'):
+                    kwargs['explanation'] = True
+                
+                move = await engine.get_move(fen, depth, **kwargs)
                 results[name] = move
             except Exception as e:
                 logger.warning(f"Motor {name} falló: {e}")

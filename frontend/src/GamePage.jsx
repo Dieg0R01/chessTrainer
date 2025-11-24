@@ -19,6 +19,7 @@ function GamePage() {
   const [selectedStrategy, setSelectedStrategy] = useState(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [lastExplanation, setLastExplanation] = useState(null);
+  const [boardSize, setBoardSize] = useState(600);
 
   const updateStatus = useCallback(() => {
     const game = gameRef.current;
@@ -188,6 +189,43 @@ function GamePage() {
       });
   }, []);
 
+  // Calcular tamaño del tablero de forma responsive
+  // El tablero siempre será múltiplo de 75px (tamaño de cada casilla)
+  useEffect(() => {
+    const updateBoardSize = () => {
+      const width = window.innerWidth;
+      const squareSize = 75; // Tamaño de cada casilla
+      const squaresPerRow = 8; // 8x8 tablero
+      
+      if (width <= 480) {
+        // Móviles pequeños - calcular múltiplo de 75px que quepa
+        const maxWidth = width - 50;
+        const maxSquares = Math.floor(maxWidth / squareSize);
+        const boardSize = Math.min(maxSquares, squaresPerRow) * squareSize;
+        setBoardSize(boardSize);
+      } else if (width <= 768) {
+        // Tablets pequeñas y móviles grandes
+        const maxWidth = width - 60;
+        const maxSquares = Math.floor(maxWidth / squareSize);
+        const boardSize = Math.min(maxSquares, squaresPerRow) * squareSize;
+        setBoardSize(boardSize);
+      } else if (width <= 1024) {
+        // Tablets
+        const maxWidth = width - 80;
+        const maxSquares = Math.floor(maxWidth / squareSize);
+        const boardSize = Math.min(maxSquares, squaresPerRow) * squareSize;
+        setBoardSize(boardSize);
+      } else {
+        // Desktop, tamaño fijo: 8 casillas * 75px = 600px
+        setBoardSize(squaresPerRow * squareSize);
+      }
+    };
+    
+    updateBoardSize();
+    window.addEventListener('resize', updateBoardSize);
+    return () => window.removeEventListener('resize', updateBoardSize);
+  }, []);
+
   useEffect(() => {
     console.log("GamePage montado.");
     console.log("Motor A seleccionado:", selectedEngineA);
@@ -295,10 +333,6 @@ function GamePage() {
       return false;
     }
     
-    // Limpiar selección cuando se hace drag and drop
-    setSelectedSquare(null);
-    setPossibleMoves({});
-    
     try {
       const game = gameRef.current;
       const move = game.move({
@@ -314,6 +348,10 @@ function GamePage() {
       lastMoveWasEngineRef.current = false; // El movimiento fue humano
       setPosition(game.fen());
       
+      // Limpiar selección/estilos al completar el movimiento
+      setSelectedSquare(null);
+      setPossibleMoves({});
+      
       // Actualizar status de forma síncrona
       updateStatus();
       
@@ -326,6 +364,26 @@ function GamePage() {
       return false;
     }
   }, [isProcessing, updateStatus, getCurrentPlayer]);
+
+  const onPieceDragBegin = useCallback((piece, sourceSquare) => {
+    if (isProcessing) return;
+
+    const currentPlayer = getCurrentPlayer();
+    if (currentPlayer) return;
+
+    const game = gameRef.current;
+    const pieceData = game.get(sourceSquare);
+    if (!pieceData || pieceData.color !== game.turn()) return;
+
+    setSelectedSquare(sourceSquare);
+    const moves = getPossibleMoves(sourceSquare);
+    setPossibleMoves(moves);
+  }, [isProcessing, getCurrentPlayer, getPossibleMoves]);
+
+  const onPieceDragEnd = useCallback(() => {
+    setSelectedSquare(null);
+    setPossibleMoves({});
+  }, []);
 
   // Combinar estilos personalizados: casilla seleccionada + casillas posibles
   const customSquareStyles = useMemo(() => {
@@ -351,6 +409,8 @@ function GamePage() {
       position={position}
       onPieceDrop={onPieceDrop}
       onSquareClick={onSquareClick}
+      onPieceDragBegin={onPieceDragBegin}
+      onPieceDragEnd={onPieceDragEnd}
       customSquareStyles={customSquareStyles}
       customBoardStyle={{
         borderRadius: '0px',
@@ -364,9 +424,10 @@ function GamePage() {
       customDarkSquareStyle={{
         backgroundColor: '#147e1f'
       }}
-      boardWidth={600}
+      boardWidth={boardSize}
+      arePiecesDraggable={!isProcessing}
     />
-  ), [position, onPieceDrop, onSquareClick, customSquareStyles]);
+  ), [position, onPieceDrop, onSquareClick, onPieceDragBegin, onPieceDragEnd, customSquareStyles, boardSize, isProcessing]);
 
   console.log("Renderizando GamePage, FEN:", position);
 
@@ -412,8 +473,8 @@ function GamePage() {
 
         {/* Chess board container */}
         <div className="board-container">
-          <div className="board-frame">
-            <div className="board-inner">
+          <div className="board-frame game-mode">
+            <div className="board-inner game-mode">
               {memoizedChessboard}
             </div>
             <div className="board-label glow">CHESS.SYS v2.1</div>

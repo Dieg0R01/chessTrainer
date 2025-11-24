@@ -360,16 +360,26 @@ GamePage monta
       "bestmove": "e2e4",
       "explanation": "Apertura clásica..."
     },
-    ...
+    {
+      "engine": "motor-con-error",
+      "bestmove": "ERROR: Connection timeout",
+      "explanation": null
+    }
   ],
-  "engines_compared": 5
+  "engines_compared": 3
 }
 ```
 
+**Características**:
+- Compara **todos los motores disponibles** automáticamente
+- Solicita **explicaciones automáticamente** para motores generativos
+- **Manejo robusto de errores**: Los motores que fallan se marcan con `"ERROR: mensaje"` sin bloquear la comparación
+- Formato de respuesta: Array de objetos (no diccionario)
+
 **Uso en Frontend**: 
 - Función: `compareEngines()` en `api.js:309-339`
-- Componente: `ComparePage.jsx`
-- Líneas: `ComparePage.jsx:18-28` (función `handleCompare`)
+- Componente: `ComparePage.jsx` (421 líneas)
+- Líneas: `ComparePage.jsx:146-160` (función `handleCompare`)
 
 **Flujo**:
 ```
@@ -377,14 +387,26 @@ Usuario en ComparePage hace click en "COMPARAR MOTORES"
   → handleCompare()
     → compareEngines(position, depth)
       → POST /compare
-        → engine_manager.compare_engines()
+        → engine_manager.compare_engines(fen, depth)
           → Itera sobre todos los motores
-            → Cada motor calcula su mejor movimiento
-              → setComparisonResults(results)
-                → Renderiza tabla con resultados
+            → Para cada motor:
+              * engine.get_move(fen, depth, explanation=True)
+              * Si es generativo: obtiene explicación
+              * Si falla: marca como ERROR
+          → Transforma diccionario a array
+          → Incluye explicaciones disponibles
+        → setComparisonResults(results)
+          → Renderiza tabla estructurada con resultados
+          → Filtrado en tiempo real disponible
 ```
 
-**Visualización**: Tabla de resultados en `ComparePage.jsx:120-135` mostrando motor, movimiento y explicación.
+**Visualización**: 
+- Tabla estructurada en `ComparePage.jsx:343-392` con columnas: Motor, Movimiento, Análisis/Explicación
+- Indicadores visuales para errores (fondo rojizo)
+- Campo de filtrado para buscar en resultados
+
+**Documentación Completa**: 
+👉 Ver [COMPARACION_MOTORES.md](./COMPARACION_MOTORES.md) para documentación detallada de la página de comparación.
 
 ---
 

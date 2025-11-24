@@ -22,9 +22,6 @@ body {
   color: var(--retro-green);
   overflow-y: auto;
   overflow-x: hidden;
-  position: relative;
-  /* Animación de parpadeo sutil CRT */
-  animation: flicker 8s linear infinite;
 }
 
 /* Scrollbar styling para body */
@@ -34,117 +31,28 @@ body::-webkit-scrollbar {
 
 body::-webkit-scrollbar-track {
   background: rgba(0, 20, 0, 0.8);
-  border: 1px solid var(--retro-green);
 }
 
 body::-webkit-scrollbar-thumb {
   background: var(--retro-dark-green);
-  border: 2px solid var(--retro-green);
 }
 
 body::-webkit-scrollbar-thumb:hover {
   background: var(--retro-green);
-  box-shadow: 0 0 10px var(--retro-glow);
-}
-
-/* Efecto CRT con rayas */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.1),
-    rgba(0, 0, 0, 0.1) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-  pointer-events: none;
-  z-index: 9999;
-  animation: crtScanlines 8s linear infinite;
-}
-
-/* Efecto blur sutil CRT */
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  backdrop-filter: blur(0.3px);
-  opacity: 0.15;
-  pointer-events: none;
-  z-index: 9998;
 }
 
 #root {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding: 20px 0;
 }
 
-/* Animación de parpadeo sutil CRT */
-@keyframes flicker {
-  0% { opacity: 1; }
-  1% { opacity: 0.99; }
-  2% { opacity: 1; }
-  3% { opacity: 0.98; }
-  4% { opacity: 1; }
-  5% { opacity: 0.99; }
-  6% { opacity: 1; }
-  7% { opacity: 0.98; }
-  8% { opacity: 1; }
-  9% { opacity: 0.99; }
-  10% { opacity: 1; }
-  50% { opacity: 1; }
-  51% { opacity: 0.98; }
-  52% { opacity: 1; }
-  100% { opacity: 1; }
-}
-
-/* Efecto de barras de interferencia CRT */
-@keyframes crtScanlines {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(4px); }
-}
-
-/* Efecto de resplandor en textos */
+/* Efecto de resplandor sutil en textos */
 .glow {
-  text-shadow: 
-    0 0 4.5px var(--retro-glow),
-    0 0 9px var(--retro-glow),
-    0 0 13.5px var(--retro-glow);
-}
-
-/* Aplicar glow suave a todos los elementos con texto */
-h1, h2, h3, h4, h5, h6,
-.status-line,
-.history-item,
-.form-label,
-.history-title,
-.board-label,
-.footer-text,
-.terminal-title,
-select,
-option {
-  text-shadow: 
-    0 0 4.5px var(--retro-glow),
-    0 0 9px var(--retro-glow),
-    0 0 13.5px var(--retro-glow);
-}
-
-/* Los botones tienen su propio glow controlado por .retro-button */
-button:not(.retro-button) {
-  text-shadow: 
-    0 0 4.5px var(--retro-glow),
-    0 0 9px var(--retro-glow),
-    0 0 13.5px var(--retro-glow);
+  text-shadow: 0 0 2px var(--retro-green);
 }
 
 /* Blinking cursor animation */
@@ -172,4 +80,3 @@ button:not(.retro-button) {
     box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
   }
 }
-
