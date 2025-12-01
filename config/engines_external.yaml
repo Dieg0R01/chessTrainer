@@ -25,7 +25,7 @@ engines:
       multiPv: "1"
     extract: "$.pvs[0].moves"
     timeout: 30.0
-    description: "Lichess Cloud Analysis - Motor externo REST"
+    description: "Lichess Cloud Analysis es el servicio de análisis de Lichess.org. Utiliza Stockfish en la nube y proporciona evaluaciones rápidas y precisas sin necesidad de instalar software local. Ideal para análisis rápido de posiciones."
   
   # ============================================================================
   # MOTORES NEURONALES (EXTERNOS)
@@ -56,7 +56,7 @@ engines:
     api_key: "${OPENAI_API_KEY}"  # Variable de entorno obligatoria
     temperature: 0.3
     max_tokens: 500
-    description: "GPT-4o-mini - Modelo gratuito de OpenAI (velocidad promedio)"
+    description: "GPT-4o-mini es un modelo de lenguaje de OpenAI optimizado para velocidad. Como motor de ajedrez, utiliza comprensión del juego y razonamiento estratégico para sugerir movimientos. Puede explicar sus decisiones y adaptar su estilo según la estrategia seleccionada."
   
   # GPT-3.5-turbo-0125 (Gratuito - Puede no estar disponible en free_chatgpt_api)
   # NOTA: Los modelos con fecha específica pueden devolver 503 en la API gratuita
@@ -68,7 +68,7 @@ engines:
     api_key: "${OPENAI_API_KEY}"
     temperature: 0.3
     max_tokens: 500
-    description: "GPT-3.5-turbo-0125 - Modelo gratuito (puede no estar disponible)"
+    description: "GPT-3.5-turbo-0125 es una versión específica del modelo GPT-3.5-turbo. Motor generativo que utiliza comprensión del ajedrez y razonamiento para sugerir movimientos. Puede explicar decisiones y adaptarse a estrategias. Nota: puede no estar disponible en todas las APIs."
   
   # GPT-3.5-turbo-1106 (Gratuito - Puede no estar disponible en free_chatgpt_api)
   # NOTA: Los modelos con fecha específica pueden devolver 503 en la API gratuita
@@ -80,7 +80,7 @@ engines:
     api_key: "${OPENAI_API_KEY}"
     temperature: 0.3
     max_tokens: 500
-    description: "GPT-3.5-turbo-1106 - Modelo gratuito (puede no estar disponible)"
+    description: "GPT-3.5-turbo-1106 es una versión específica del modelo GPT-3.5-turbo. Motor generativo que combina conocimiento del ajedrez con razonamiento contextual. Puede explicar movimientos y adaptarse a estrategias. Nota: puede no estar disponible en todas las APIs."
   
   # GPT-3.5-turbo (Gratuito - Versión estándar)
   gpt-3.5-turbo:
@@ -91,7 +91,7 @@ engines:
     api_key: "${OPENAI_API_KEY}"
     temperature: 0.3
     max_tokens: 500
-    description: "GPT-3.5-turbo - Modelo gratuito de OpenAI (versión estándar)"
+    description: "GPT-3.5-turbo es un modelo de lenguaje versátil de OpenAI. Como motor de ajedrez, combina conocimiento del juego con razonamiento contextual. Puede explicar movimientos y adaptarse a diferentes estilos de juego mediante estrategias configurables."
   
   # GPT-3.5-turbo-16k (Gratuito - Contexto extendido)
   gpt-3.5-turbo-16k:
@@ -102,7 +102,7 @@ engines:
     api_key: "${OPENAI_API_KEY}"
     temperature: 0.3
     max_tokens: 500
-    description: "GPT-3.5-turbo-16k - Modelo gratuito con contexto extendido"
+    description: "GPT-3.5-turbo-16k es una versión con contexto extendido (16k tokens). Motor generativo ideal para partidas largas ya que puede mantener más contexto del historial de movimientos. Puede explicar decisiones y adaptarse a diferentes estrategias."
   
   # net-gpt-3.5-turbo (Gratuito - Con búsqueda en red, menos estable)
   net-gpt-3.5-turbo:
@@ -113,7 +113,7 @@ engines:
     api_key: "${OPENAI_API_KEY}"
     temperature: 0.3
     max_tokens: 500
-    description: "net-gpt-3.5-turbo - Modelo con búsqueda en red (menos estable)"
+    description: "net-gpt-3.5-turbo es una versión con capacidad de búsqueda en internet. Motor generativo que puede acceder a información en línea para mejorar sus decisiones. Útil para análisis contextual, aunque puede ser menos estable que versiones estándar."
   
   # GPT-4 Chess Assistant (OpenAI) - Modelo de pago
   # gpt4-chess:

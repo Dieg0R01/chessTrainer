@@ -2,12 +2,12 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { fetchBestMove, fetchStrategies } from './api';
+import { fetchBestMove, fetchStrategies, fetchEnginesInfo } from './api';
 import CustomSelect from './CustomSelect';
 
 function GamePage() {
   const location = useLocation();
-  const { selectedEngineA, selectedEngineB } = location.state || {};
+  const { selectedEngineA, selectedEngineB, use3DBoard = false } = location.state || {};
   const gameRef = useRef(new Chess());
   const [position, setPosition] = useState(gameRef.current.fen());
   const [status, setStatus] = useState("");
@@ -17,9 +17,16 @@ function GamePage() {
   const [possibleMoves, setPossibleMoves] = useState({});
   const [strategies, setStrategies] = useState({});
   const [selectedStrategy, setSelectedStrategy] = useState(null);
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [lastExplanation, setLastExplanation] = useState(null);
   const [boardSize, setBoardSize] = useState(600);
+  const [enginesInfo, setEnginesInfo] = useState({});
+  
+  // Determinar si el motor actual es generativo
+  const isCurrentEngineGenerative = useMemo(() => {
+    const currentEngine = gameRef.current.turn() === 'w' ? selectedEngineA : selectedEngineB;
+    if (!currentEngine || currentEngine === 'human') return false;
+    const engineInfo = enginesInfo[currentEngine];
+    return engineInfo && engineInfo.type === 'generative';
+  }, [selectedEngineA, selectedEngineB, enginesInfo, position]);
 
   const updateStatus = useCallback(() => {
     const game = gameRef.current;
@@ -80,11 +87,6 @@ function GamePage() {
         options.strategy = selectedStrategy;
       }
       
-      // Agregar explicación si está habilitada
-      if (showExplanation) {
-        options.explanation = true;
-      }
-      
       // Obtener el movimiento del backend usando la API centralizada
       // Pasar move_history para que los motores generativos tengan contexto del juego
       const data = await fetchBestMove(engineName, currentFen, 10, options);
@@ -97,16 +99,6 @@ function GamePage() {
           lastMoveWasEngineRef.current = true; // Marcar que el último movimiento fue del motor
           setPosition(game.fen());
           updateStatus();
-          
-          // Si hay explicación disponible (motores generativos), guardarla
-          if (data.explanation) {
-            console.log(`Explicación del motor ${engineName}:`, data.explanation);
-            setLastExplanation({
-              engine: engineName,
-              explanation: data.explanation,
-              move: bestMove
-            });
-          }
         } catch (error) {
           console.error("Error al aplicar movimiento del motor:", error);
           setStatus(`Error: No se pudo aplicar el movimiento ${bestMove}. ${error.message}`);
@@ -120,7 +112,7 @@ function GamePage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, updateStatus, selectedStrategy, showExplanation]);
+  }, [isProcessing, updateStatus, selectedStrategy]);
 
   // Determinar qué motor debe jugar según el turno actual
   const getCurrentPlayer = useCallback(() => {
@@ -136,10 +128,10 @@ function GamePage() {
       return null; // Es humano
     } else {
       // Turno de negras
-      if (selectedEngineB && selectedEngineB !== 'none' && selectedEngineB !== 'human') {
+      if (selectedEngineB && selectedEngineB !== 'human') {
         return selectedEngineB;
       }
-      return null; // Es humano o none
+      return null; // Es humano
     }
   }, [selectedEngineA, selectedEngineB]);
 
@@ -177,7 +169,7 @@ function GamePage() {
     }
   }, [position, isProcessing, getCurrentPlayer, makeEngineMove]);
 
-  // Cargar estrategias disponibles al montar
+  // Cargar estrategias y información de motores al montar
   useEffect(() => {
     fetchStrategies()
       .then(data => {
@@ -186,6 +178,18 @@ function GamePage() {
       })
       .catch(error => {
         console.warn('⚠️ No se pudieron cargar estrategias:', error);
+      });
+    
+    fetchEnginesInfo()
+      .then(data => {
+        const infoMap = {};
+        data.engines.forEach(engine => {
+          infoMap[engine.name] = engine;
+        });
+        setEnginesInfo(infoMap);
+      })
+      .catch(error => {
+        console.warn('⚠️ No se pudo cargar información de motores:', error);
       });
   }, []);
 
@@ -404,30 +408,127 @@ function GamePage() {
   }, [selectedSquare, possibleMoves]);
 
   // Memoizar el componente Chessboard para evitar re-renders innecesarios
-  const memoizedChessboard = useMemo(() => (
-    <Chessboard
-      position={position}
-      onPieceDrop={onPieceDrop}
-      onSquareClick={onSquareClick}
-      onPieceDragBegin={onPieceDragBegin}
-      onPieceDragEnd={onPieceDragEnd}
-      customSquareStyles={customSquareStyles}
-      customBoardStyle={{
-        borderRadius: '0px',
-        boxShadow: 'none',
-        width: '100%',
-        height: '100%'
-      }}
-      customLightSquareStyle={{
-        backgroundColor: '#24a32a'
-      }}
-      customDarkSquareStyle={{
-        backgroundColor: '#147e1f'
-      }}
-      boardWidth={boardSize}
-      arePiecesDraggable={!isProcessing}
-    />
-  ), [position, onPieceDrop, onSquareClick, onPieceDragBegin, onPieceDragEnd, customSquareStyles, boardSize, isProcessing]);
+  const memoizedChessboard = useMemo(() => {
+    // Calcular tamaño del tablero 3D (un poco más pequeño para que quepa)
+    const board3DSize = use3DBoard ? Math.floor(boardSize * 0.85) : boardSize;
+    
+    if (use3DBoard) {
+      // Tablero 3D con estética retro verde, grosor y centrado
+      const boardTotalSize = board3DSize + 48; // tablero + bordes
+      const boardThickness = 30;
+      
+      return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100%',
+          height: '100%',
+          perspective: '1200px',
+          perspectiveOrigin: 'center center'
+        }}>
+          <div style={{
+            transform: 'rotateX(27.5deg)',
+            transformOrigin: 'center center',
+            transformStyle: 'preserve-3d',
+            position: 'relative',
+            width: `${boardTotalSize}px`,
+            height: `${boardTotalSize + boardThickness}px`
+          }}>
+            {/* Tablero con casillas (cara superior) */}
+            <div style={{
+              position: 'relative',
+              zIndex: 2,
+              transform: 'translateZ(0px)'
+            }}>
+              <Chessboard
+                position={position}
+                onPieceDrop={onPieceDrop}
+                onSquareClick={onSquareClick}
+                onPieceDragBegin={onPieceDragBegin}
+                onPieceDragEnd={onPieceDragEnd}
+                customSquareStyles={customSquareStyles}
+                customBoardStyle={{
+                  border: '24px solid #0f3d14',
+                  borderStyle: 'solid',
+                  borderRadius: '6px',
+                  boxShadow: `
+                    inset 0 0 0 3px #1a5a1f,
+                    inset 0 0 0 6px #0f3d14,
+                    0 0 0 3px #1a5a1f,
+                    0 0 0 6px #0f3d14,
+                    rgba(0, 0, 0, 0.7) 0px 35px 70px -15px,
+                    rgba(0, 0, 0, 0.5) 0px 20px 40px -20px
+                  `,
+                  padding: '15px',
+                  background: '#24a32a',
+                  overflow: 'visible',
+                  position: 'relative',
+                  width: `${boardTotalSize}px`,
+                  height: `${boardTotalSize}px`,
+                  boxSizing: 'border-box'
+                }}
+                customLightSquareStyle={{
+                  backgroundColor: '#24a32a'
+                }}
+                customDarkSquareStyle={{
+                  backgroundColor: '#147e1f'
+                }}
+                boardWidth={board3DSize}
+                arePiecesDraggable={!isProcessing}
+              />
+            </div>
+            {/* Grosor del tablero - cara inferior (detrás del tablero) */}
+            <div style={{
+              position: 'absolute',
+              top: `${boardTotalSize}px`,
+              left: '0',
+              width: `${boardTotalSize}px`,
+              height: `${boardThickness}px`,
+              background: 'linear-gradient(to bottom, #0a2d0f 0%, #051a08 100%)',
+              transform: 'rotateX(-90deg)',
+              transformOrigin: 'top center',
+              borderRadius: '0 0 6px 6px',
+              boxShadow: 'rgba(0, 0, 0, 0.6) 0px 15px 30px',
+              border: '24px solid #0f3d14',
+              borderTop: 'none',
+              borderLeftWidth: '24px',
+              borderRightWidth: '24px',
+              borderBottomWidth: '24px',
+              boxSizing: 'border-box',
+              zIndex: 1
+            }} />
+          </div>
+        </div>
+      );
+    } else {
+      // Tablero tradicional
+      return (
+        <Chessboard
+          position={position}
+          onPieceDrop={onPieceDrop}
+          onSquareClick={onSquareClick}
+          onPieceDragBegin={onPieceDragBegin}
+          onPieceDragEnd={onPieceDragEnd}
+          customSquareStyles={customSquareStyles}
+          customBoardStyle={{
+            borderRadius: '0px',
+            boxShadow: 'none',
+            width: '100%',
+            height: '100%'
+          }}
+          customLightSquareStyle={{
+            backgroundColor: '#24a32a'
+          }}
+          customDarkSquareStyle={{
+            backgroundColor: '#147e1f'
+          }}
+          boardWidth={boardSize}
+          arePiecesDraggable={!isProcessing}
+        />
+      );
+    }
+  }, [position, onPieceDrop, onSquareClick, onPieceDragBegin, onPieceDragEnd, customSquareStyles, boardSize, isProcessing, use3DBoard]);
 
   console.log("Renderizando GamePage, FEN:", position);
 
@@ -438,7 +539,7 @@ function GamePage() {
         <div className="terminal-title glow">
           ═══════════════════════════════════════
         </div>
-        <h1 className="main-title glow">CHESS TRAINER TERMINAL v2.0</h1>
+        <h1 className="main-title glow">CHESS TRAINER TERMINAL</h1>
         <div className="terminal-title glow">
           ═══════════════════════════════════════
         </div>
@@ -460,7 +561,7 @@ function GamePage() {
                 <span className="blink">&gt;</span> ENGINE A: {selectedEngineA || "HUMANO"}
               </div>
               <div className="status-line">
-                <span className="blink">&gt;</span> ENGINE B: {selectedEngineB === "none" ? "HUMANO" : selectedEngineB}
+                <span className="blink">&gt;</span> ENGINE B: {selectedEngineB === 'human' ? "HUMANO" : selectedEngineB}
               </div>
               {isProcessing && (
                 <div className="status-line">
@@ -477,7 +578,6 @@ function GamePage() {
             <div className="board-inner game-mode">
               {memoizedChessboard}
             </div>
-            <div className="board-label glow">CHESS.SYS v2.1</div>
           </div>
         </div>
 
@@ -489,10 +589,10 @@ function GamePage() {
                 VOLVER A SELECCIÓN
               </button>
 
-              {/* Selector de estrategias para motores generativos */}
-              {Object.keys(strategies).length > 0 && (
+              {/* Selector de estrategias para motores generativos - Solo mostrar si el motor actual es generativo */}
+              {isCurrentEngineGenerative && Object.keys(strategies).length > 0 && (
                 <div className="form-group" style={{ marginBottom: '10px' }}>
-                  <label className="form-label glow">ESTRATEGIA (Generativos)</label>
+                  <label className="form-label glow">ESTRATEGIA</label>
                   <CustomSelect
                     value={selectedStrategy || ''}
                     onChange={(value) => setSelectedStrategy(value || null)}
@@ -508,19 +608,6 @@ function GamePage() {
                 </div>
               )}
 
-              {/* Checkbox para explicaciones */}
-              <div style={{ marginBottom: '10px', fontSize: '11px' }}>
-                <label style={{ color: '#0f0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <input
-                    type="checkbox"
-                    checked={showExplanation}
-                    onChange={(e) => setShowExplanation(e.target.checked)}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  Solicitar explicación
-                </label>
-              </div>
-
               <div className="move-history">
                 <div className="history-title glow">▼ GAME STATUS:</div>
                 <div className="history-content">
@@ -530,20 +617,6 @@ function GamePage() {
                 </div>
               </div>
 
-              {/* Mostrar última explicación si existe */}
-              {lastExplanation && (
-                <div className="move-history" style={{ marginTop: '10px' }}>
-                  <div className="history-title glow">▼ EXPLICACIÓN ({lastExplanation.engine}):</div>
-                  <div className="history-content">
-                    <div className="history-item" style={{ fontSize: '10px' }}>
-                      <strong>Movimiento:</strong> {lastExplanation.move}
-                    </div>
-                    <div className="history-item" style={{ fontSize: '10px', color: '#aaa' }}>
-                      {lastExplanation.explanation}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

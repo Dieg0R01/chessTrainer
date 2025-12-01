@@ -5,160 +5,35 @@ import GamePage from './GamePage';
 import ComparePage from './ComparePage';
 import EnginesMatrixPage from './EnginesMatrixPage';
 import CustomSelect from './CustomSelect';
-import { 
-  fetchEngines, 
-  fetchEnginesInfo, 
-  filterEnginesByType, 
-  filterEnginesByOrigin,
-  checkBackendHealth,
-  reloadConfig
-} from './api';
+import { useEngines } from './hooks/useEngines';
 
-function SelectionPage() {
-  const [selectedEngineA, setSelectedEngineA] = useState("");
-  const [selectedEngineB, setSelectedEngineB] = useState("none"); // 'none' para jugar contra humano
-  const [availableEngines, setAvailableEngines] = useState([]);
-  const [filteredEngines, setFilteredEngines] = useState([]);
-  const [enginesInfo, setEnginesInfo] = useState({});
-  const [selectedEngineInfo, setSelectedEngineInfo] = useState(null);
-  const [isLoadingEngines, setIsLoadingEngines] = useState(true);
-  const [engineError, setEngineError] = useState(null);
-  const [backendHealth, setBackendHealth] = useState(null);
-  const [filterType, setFilterType] = useState("all");
-  const [filterOrigin, setFilterOrigin] = useState("all");
+function SelectionPage({ enginesContext }) {
+  // Selección de jugadores: Motor A y Motor B por defecto son HUMANO
+  const [selectedEngineA, setSelectedEngineA] = useState("human");
+  const [selectedEngineB, setSelectedEngineB] = useState("human");
+  const [use3DBoard, setUse3DBoard] = useState(false);
+  
   const navigate = useNavigate();
 
-  // Verificar salud del backend al inicio
-  useEffect(() => {
-    checkBackendHealth()
-      .then(health => {
-        setBackendHealth(health);
-        console.log('✅ Backend saludable:', health);
-      })
-      .catch(error => {
-        console.warn('⚠️ No se pudo verificar salud del backend:', error);
-        setBackendHealth(null);
-      });
-  }, []);
+  // Usar el contexto de motores pasado desde App, o crear uno local si no existe
+  const enginesHook = enginesContext || useEngines();
+  const {
+    engines: availableEngines,
+    filteredEngines,
+    enginesInfo,
+    isLoading: isLoadingEngines,
+    error: engineError,
+    backendHealth,
+    filterType,
+    setFilterType,
+    filterOrigin,
+    setFilterOrigin
+  } = enginesHook;
 
-  // Cargar motores e información detallada
-  useEffect(() => {
-    console.log('🚀 Iniciando carga de motores...');
-    setIsLoadingEngines(true);
-    setEngineError(null);
-    
-    Promise.all([
-      fetchEngines(),
-      fetchEnginesInfo()
-    ])
-      .then(([engines, infoData]) => {
-        console.log('✅ Motores cargados exitosamente:', engines);
-        console.log('✅ Información de motores cargada:', infoData);
-        
-        setAvailableEngines(engines);
-        
-        // Crear mapa de información por nombre de motor
-        const infoMap = {};
-        if (infoData.engines) {
-          infoData.engines.forEach(engineInfo => {
-            infoMap[engineInfo.name] = engineInfo;
-          });
-        }
-        setEnginesInfo(infoMap);
-        
-        setIsLoadingEngines(false);
-        if (engines.length === 0) {
-          setEngineError('No se encontraron motores disponibles en el backend');
-        }
-      })
-      .catch(error => {
-        console.error("❌ Error al obtener los motores:", error);
-        
-        setAvailableEngines([]);
-        setFilteredEngines([]);
-        setIsLoadingEngines(false);
-        
-        let errorMessage = 'Error desconocido al conectar con el backend';
-        
-        if (error.name === 'ConnectionError' || error.message.includes('No se pudo conectar')) {
-          errorMessage = '⚠️ Backend no disponible. Asegúrate de iniciar el servidor en http://localhost:8000';
-        } else if (error.message.includes('Error del servidor')) {
-          errorMessage = `⚠️ Error del servidor: ${error.message}`;
-        } else {
-          errorMessage = `⚠️ Error: ${error.message}`;
-        }
-        
-        setEngineError(errorMessage);
-      });
-  }, []);
 
-  // Aplicar filtros cuando cambian los filtros o los motores disponibles
-  useEffect(() => {
-    if (availableEngines.length === 0) {
-      setFilteredEngines([]);
-      return;
-    }
-
-    let filtered = [...availableEngines];
-
-    // Aplicar filtro por tipo
-    if (filterType !== "all") {
-      filterEnginesByType(filterType)
-        .then(result => {
-          const typeFiltered = result.engines || [];
-          filtered = filtered.filter(engine => typeFiltered.includes(engine));
-          applyOriginFilter(filtered);
-        })
-        .catch(error => {
-          console.error('Error filtrando por tipo:', error);
-          applyOriginFilter(filtered);
-        });
-    } else {
-      applyOriginFilter(filtered);
-    }
-  }, [filterType, filterOrigin, availableEngines]);
-
-  const applyOriginFilter = (engines) => {
-    if (filterOrigin === "all") {
-      setFilteredEngines(engines);
-      return;
-    }
-
-    filterEnginesByOrigin(filterOrigin)
-      .then(result => {
-        const originFiltered = result.engines || [];
-        const finalFiltered = engines.filter(engine => originFiltered.includes(engine));
-        setFilteredEngines(finalFiltered);
-      })
-      .catch(error => {
-        console.error('Error filtrando por origen:', error);
-        setFilteredEngines(engines);
-      });
-  };
-
-  // Actualizar información del motor seleccionado
-  useEffect(() => {
-    const engineToShow = selectedEngineA || (selectedEngineB !== "none" && selectedEngineB !== "human" ? selectedEngineB : null);
-    if (engineToShow && enginesInfo[engineToShow]) {
-      setSelectedEngineInfo(enginesInfo[engineToShow]);
-    } else {
-      setSelectedEngineInfo(null);
-    }
-  }, [selectedEngineA, selectedEngineB, enginesInfo]);
-
-  const handleReloadConfig = async () => {
-    try {
-      const result = await reloadConfig();
-      alert(`✅ Configuración recargada. ${result.engines_loaded} motores cargados.`);
-      // Recargar la página para actualizar los motores
-      window.location.reload();
-    } catch (error) {
-      alert(`❌ Error al recargar configuración: ${error.message}`);
-    }
-  };
 
   const handleStartGame = () => {
-    navigate('/game', { state: { selectedEngineA, selectedEngineB } });
+    navigate('/game', { state: { selectedEngineA, selectedEngineB, use3DBoard } });
   };
 
   return (
@@ -182,7 +57,7 @@ function SelectionPage() {
         <div className="terminal-title glow">
           ═══════════════════════════════════════
         </div>
-        <h1 className="main-title glow">CHESS TRAINER TERMINAL v2.0</h1>
+        <h1 className="main-title glow">CHESS TRAINER TERMINAL</h1>
         <div className="terminal-title glow">
           ═══════════════════════════════════════
         </div>
@@ -198,14 +73,9 @@ function SelectionPage() {
                 <span className="blink">&gt;</span> SYSTEM STATUS: {backendHealth ? 'ONLINE' : 'CHECKING...'}
               </div>
               {backendHealth && (
-                <>
-                  <div className="status-line">
-                    <span className="blink">&gt;</span> VERSION: {backendHealth.version}
-                  </div>
-                  <div className="status-line">
-                    <span className="blink">&gt;</span> ENGINES: {backendHealth.engines}
-                  </div>
-                </>
+                <div className="status-line">
+                  <span className="blink">&gt;</span> ENGINES: {availableEngines.length}
+                </div>
               )}
               <div className="status-line">
                 <span className="blink">&gt;</span> MODE: ENGINE SELECTION
@@ -250,32 +120,30 @@ function SelectionPage() {
 
                 <div className="form-group">
                   <label className="form-label glow" htmlFor="engineA">
-                    MOTOR BLANCO (TÚ O MOTOR A)
+                    MOTOR BLANCO (MOTOR A)
                   </label>
                   <CustomSelect
                     value={selectedEngineA}
                     onChange={(value) => setSelectedEngineA(value)}
                     placeholder="-- SELECCIONA UN MOTOR --"
                     options={[
-                      { value: '', label: '-- SELECCIONA UN MOTOR --' },
+                      { value: 'human', label: 'HUMANO' },
                       ...(filteredEngines.length > 0 ? filteredEngines : availableEngines).map(engine => ({
                         value: engine,
                         label: engine
-                      })),
-                      { value: 'human', label: 'HUMANO' }
+                      }))
                     ]}
                   />
                 </div>
                 
                 <div className="form-group">
                   <label className="form-label glow" htmlFor="engineB">
-                    MOTOR NEGRO (MOTOR B O NINGUNO)
+                    MOTOR NEGRO (MOTOR B)
                   </label>
                   <CustomSelect
                     value={selectedEngineB}
                     onChange={(value) => setSelectedEngineB(value)}
                     options={[
-                      { value: 'none', label: 'NINGUNO (JUGARÁS CONTRA EL MOTOR A)' },
                       { value: 'human', label: 'HUMANO' },
                       ...(filteredEngines.length > 0 ? filteredEngines : availableEngines).map(engine => ({
                         value: engine,
@@ -285,12 +153,48 @@ function SelectionPage() {
                   />
                 </div>
 
+                {/* Switch para tablero 3D */}
+                <div style={{ 
+                  marginTop: '15px', 
+                  marginBottom: '10px', 
+                  border: '2px solid var(--retro-green)', 
+                  padding: '12px 15px', 
+                  borderRadius: '0px',
+                  background: 'rgba(36, 163, 42, 0.05)'
+                }}>
+                  <label style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '12px', 
+                    cursor: 'pointer',
+                    fontFamily: 'VT323, monospace',
+                    fontSize: '22px',
+                    letterSpacing: '1.5px',
+                    color: 'var(--retro-green)'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={use3DBoard}
+                      onChange={(e) => setUse3DBoard(e.target.checked)}
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        cursor: 'pointer',
+                        accentColor: 'var(--retro-green)',
+                        filter: 'brightness(1.2)'
+                      }}
+                    />
+                    <span className="glow">TABLERO 3D</span>
+                  </label>
+                </div>
+
                 <div style={{ display: 'flex', gap: '10px', marginTop: '15px', flexWrap: 'wrap' }}>
                   <button 
                     className="retro-button glow" 
                     onClick={handleStartGame} 
-                    disabled={!selectedEngineA && selectedEngineB !== "none"}
+                    disabled={!selectedEngineA || (selectedEngineA === 'human' && selectedEngineB === 'human')}
                     style={{ flex: 1, minWidth: '200px' }}
+                    title={(!selectedEngineA || (selectedEngineA === 'human' && selectedEngineB === 'human')) ? "Selecciona al menos un motor para jugar" : ""}
                   >
                     EMPEZAR PARTIDA
                   </button>
@@ -311,7 +215,7 @@ function SelectionPage() {
                 </div>
               </div>
             </div>
-            <div className="board-label glow">ENGINE.SYS v3.0</div>
+            <div className="board-label glow">ENGINE.SYS</div>
           </div>
         </div>
 
@@ -320,72 +224,79 @@ function SelectionPage() {
           <div className="panel-border">
             <div className="panel-content">
               <div className="status-line">
-                <span className="blink">&gt;</span> MOTOR A: {selectedEngineA || "NO SELECCIONADO"}
+                <span className="blink">&gt;</span> MOTOR A: {selectedEngineA === 'human' ? "HUMANO" : (selectedEngineA || "NO SELECCIONADO")}
               </div>
               <div className="status-line">
-                <span className="blink">&gt;</span> MOTOR B: {selectedEngineB === "none" ? "NINGUNO" : selectedEngineB || "NO SELECCIONADO"}
+                <span className="blink">&gt;</span> MOTOR B: {selectedEngineB === 'human' ? "HUMANO" : (selectedEngineB || "NO SELECCIONADO")}
               </div>
-              <div className="move-history">
-                <div className="history-title glow">▼ ENGINE INFO:</div>
-                <div className="history-content">
-                  {isLoadingEngines ? (
-                    <div className="history-item blink">_ CARGANDO MOTORES...</div>
-                  ) : engineError ? (
-                    <div className="history-item" style={{ color: '#ff4444' }}>
-                      ⚠ {engineError}
-                    </div>
-                  ) : availableEngines.length === 0 ? (
-                    <div className="history-item" style={{ color: '#ffaa00' }}>
-                      ⚠ NO HAY MOTORES DISPONIBLES
-                    </div>
-                  ) : (
-                    <>
-                      {(filteredEngines.length > 0 ? filteredEngines : availableEngines).slice(0, 10).map((engine, index) => (
-                        <div key={index} className="history-item">
-                          {index + 1}. {engine}
-                        </div>
-                      ))}
-                      {(filteredEngines.length > 0 ? filteredEngines : availableEngines).length > 10 && (
-                        <div className="history-item" style={{ color: '#888' }}>
-                          ... +{(filteredEngines.length > 0 ? filteredEngines : availableEngines).length - 10} más
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-              {selectedEngineInfo && (
+              
+              {/* Información del Motor A */}
+              {selectedEngineA && selectedEngineA !== 'human' && enginesInfo[selectedEngineA] && (
                 <div className="move-history" style={{ marginTop: '10px' }}>
-                  <div className="history-title glow">▼ SELECCIONADO:</div>
+                  <div className="history-title glow">▼ MOTOR A:</div>
                   <div className="history-content">
                     <div className="history-item">
-                      <strong>{selectedEngineInfo.name}</strong>
+                      <strong>{enginesInfo[selectedEngineA].name}</strong>
+                    </div>
+                    {enginesInfo[selectedEngineA].description && (
+                      <div className="history-item" style={{ fontSize: '11px', color: '#aaa', marginTop: '5px', lineHeight: '1.4' }}>
+                        {enginesInfo[selectedEngineA].description}
+                      </div>
+                    )}
+                    <div className="history-item" style={{ fontSize: '11px', marginTop: '8px' }}>
+                      Tipo: {enginesInfo[selectedEngineA].type}
                     </div>
                     <div className="history-item" style={{ fontSize: '11px' }}>
-                      Tipo: {selectedEngineInfo.type}
+                      Origen: {enginesInfo[selectedEngineA].origin}
                     </div>
                     <div className="history-item" style={{ fontSize: '11px' }}>
-                      Origen: {selectedEngineInfo.origin}
+                      Validación: {enginesInfo[selectedEngineA].validation_mode}
                     </div>
                     <div className="history-item" style={{ fontSize: '11px' }}>
-                      Validación: {selectedEngineInfo.validation_mode}
+                      Estado: {enginesInfo[selectedEngineA].initialized ? '✓ Inicializado' : '✗ No inicializado'}
                     </div>
-                    <div className="history-item" style={{ fontSize: '11px' }}>
-                      Estado: {selectedEngineInfo.initialized ? '✓ Inicializado' : '✗ No inicializado'}
-                    </div>
+                    {enginesInfo[selectedEngineA].available !== undefined && (
+                      <div className="history-item" style={{ fontSize: '11px' }}>
+                        Disponible: {enginesInfo[selectedEngineA].available ? '✓ Sí' : '✗ No'}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-              <div style={{ marginTop: '10px' }}>
-                <button 
-                  className="retro-button glow" 
-                  onClick={handleReloadConfig}
-                  style={{ fontSize: '18px', width: '100%' }}
-                  title="Recargar configuración de motores"
-                >
-                  RECARGAR CONFIG
-                </button>
-              </div>
+
+              {/* Información del Motor B */}
+              {selectedEngineB && selectedEngineB !== 'human' && enginesInfo[selectedEngineB] && (
+                <div className="move-history" style={{ marginTop: '10px' }}>
+                  <div className="history-title glow">▼ MOTOR B:</div>
+                  <div className="history-content">
+                    <div className="history-item">
+                      <strong>{enginesInfo[selectedEngineB].name}</strong>
+                    </div>
+                    {enginesInfo[selectedEngineB].description && (
+                      <div className="history-item" style={{ fontSize: '11px', color: '#aaa', marginTop: '5px', lineHeight: '1.4' }}>
+                        {enginesInfo[selectedEngineB].description}
+                      </div>
+                    )}
+                    <div className="history-item" style={{ fontSize: '11px', marginTop: '8px' }}>
+                      Tipo: {enginesInfo[selectedEngineB].type}
+                    </div>
+                    <div className="history-item" style={{ fontSize: '11px' }}>
+                      Origen: {enginesInfo[selectedEngineB].origin}
+                    </div>
+                    <div className="history-item" style={{ fontSize: '11px' }}>
+                      Validación: {enginesInfo[selectedEngineB].validation_mode}
+                    </div>
+                    <div className="history-item" style={{ fontSize: '11px' }}>
+                      Estado: {enginesInfo[selectedEngineB].initialized ? '✓ Inicializado' : '✗ No inicializado'}
+                    </div>
+                    {enginesInfo[selectedEngineB].available !== undefined && (
+                      <div className="history-item" style={{ fontSize: '11px' }}>
+                        Disponible: {enginesInfo[selectedEngineB].available ? '✓ Sí' : '✗ No'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -402,10 +313,14 @@ function SelectionPage() {
 }
 
 function App() {
+  // Crear el contexto de motores una sola vez a nivel de App
+  // Esto evita que se recargue cada vez que se navega
+  const enginesContext = useEngines();
+  
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<SelectionPage />} />
+        <Route path="/" element={<SelectionPage enginesContext={enginesContext} />} />
         <Route path="/game" element={<GamePage />} />
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/matrix" element={<EnginesMatrixPage />} />
@@ -415,3 +330,4 @@ function App() {
 }
 
 export default App;
+

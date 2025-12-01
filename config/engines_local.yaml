@@ -1,5 +1,8 @@
 # Configuración de motores de ajedrez LOCALES
 # Motores que se ejecutan localmente sin requerir tokens de API externos
+#
+# NOTA: En Docker, los motores están en /app/bin/ y las redes en /app/weights/
+# Las rutas relativas (ej: "weights/archivo.pb.gz") se resuelven desde /app/
 
 engines:
   # ============================================================================
@@ -7,27 +10,67 @@ engines:
   # ============================================================================
   
   # Motor UCI local: Stockfish
+  # En Docker: usa "stockfish" (está en el PATH)
+  # En local: usa la ruta completa o asegúrate de que esté en el PATH
   stockfish-local:
-    engine_type: traditional_uci
-    type: uci
-    command: "stockfish"
+    engine_type: traditional
+    command: "docker exec -i chess-engines stockfish"  # Ejecutar dentro del contenedor Docker
     default_depth: 15
-    description: "Stockfish - Motor determinista local vía UCI"
+    threads: 2
+    hash: 64
+    description: "Stockfish es el motor de ajedrez de código abierto más fuerte del mundo. Utiliza algoritmos deterministas (minimax con poda alfa-beta) y evaluación posicional avanzada. Perfecto para análisis profundo y juego de alta calidad."
   
   # ============================================================================
   # MOTORES NEURONALES (LOCALES)
   # ============================================================================
   
   # Leela Chess Zero (LCZero) - Local UCI
+  # En Docker: usa "lc0" (está en el PATH)
+  # Requiere un archivo de pesos (weights) descargado en /app/weights/
   lc0-local:
     engine_type: neuronal
     protocol: uci
-    command: "lc0"
-    # weights: "/path/to/weights/file.pb.gz"  # Opcional: archivo de pesos
-    backend: "auto"  # auto, cuda, cudnn, opencl, blas, etc.
+    command: "docker exec -i chess-engines /app/bin/lc0"  # Ejecutar dentro del contenedor Docker con ruta completa
+    weights: "weights/T82-768x15x24h-swa-7464000.pb.gz"  # Red neuronal para Lc0
+    backend: "blas"  # En Docker sin GPU: "blas". Con GPU NVIDIA: "cuda" o "cudnn"
     search_mode: "nodes"  # nodes, depth, time
     default_search_value: 800000  # Número de nodos para evaluar
-    description: "Leela Chess Zero - Motor neuronal local"
+    description: "Leela Chess Zero (Lc0) es un motor neuronal inspirado en AlphaZero. Utiliza redes neuronales profundas entrenadas mediante aprendizaje por refuerzo. Juega de forma más 'humana' que los motores tradicionales, priorizando el control posicional y la comprensión estratégica."
+  
+  # Maia Chess - Motor neuronal que juega como humano (Nivel 1500 Elo)
+  # Usa el mismo binario de Lc0 pero con una red diferente
+  # Descargar red desde: https://github.com/CSSLab/maia-chess/releases
+  maia-1500:
+    engine_type: neuronal
+    protocol: uci
+    command: "docker exec -i chess-engines /app/bin/lc0"  # Mismo binario que Lc0, ejecutar dentro del contenedor con ruta completa
+    weights: "weights/maia-1500.pb.gz"  # Red neuronal para Maia 1500
+    backend: "blas"
+    search_mode: "nodes"
+    default_search_value: 1  # Maia está diseñado para jugar con 1 nodo (instantáneo)
+    description: "Maia Chess 1500 es un motor neuronal entrenado para replicar el estilo de juego humano a nivel intermedio (aproximadamente 1500 Elo). Comete errores típicos de jugadores humanos y es ideal para entrenamiento y práctica contra oponentes de nivel similar."
+  
+  # Maia Chess - Nivel 1100 Elo (más fácil)
+  # maia-1100:
+  #   engine_type: neuronal
+  #   protocol: uci
+  #   command: "lc0"
+  #   weights: "weights/maia-1100.pb.gz"
+  #   backend: "blas"
+  #   search_mode: "nodes"
+  #   default_search_value: 1
+  #   description: "Maia Chess 1100 - Motor neuronal estilo humano (Elo 1100)"
+  
+  # Maia Chess - Nivel 1900 Elo (más difícil)
+  # maia-1900:
+  #   engine_type: neuronal
+  #   protocol: uci
+  #   command: "lc0"
+  #   weights: "weights/maia-1900.pb.gz"
+  #   backend: "blas"
+  #   search_mode: "nodes"
+  #   default_search_value: 1
+  #   description: "Maia Chess 1900 - Motor neuronal estilo humano (Elo 1900)"
   
   # ============================================================================
   # MOTORES GENERATIVOS - LLMs (LOCALES)
@@ -51,12 +94,14 @@ engines:
 # 
 # 1. MOTORES TRADICIONALES LOCALES:
 #    - UCI: Requieren 'command' (ejecutable del motor instalado localmente)
-#    - Ejemplo: Stockfish debe estar instalado en el sistema
+#    - En Docker: Los binarios están en /app/bin/ y en el PATH
+#    - Ejemplo: Stockfish debe estar instalado en el sistema o en Docker
 #
 # 2. MOTORES NEURONALES LOCALES:
 #    - UCI: Similar a tradicionales pero con opciones adicionales (weights, backend)
 #    - Requieren el ejecutable del motor neuronal instalado localmente
 #    - Pueden usar 'nodes' en vez de 'depth'
+#    - Requieren archivos de pesos (weights) descargados en /app/weights/
 #
 # 3. MOTORES GENERATIVOS LOCALES:
 #    - Local: Requieren 'endpoint' o 'model_path' apuntando a servicio local
@@ -74,4 +119,8 @@ engines:
 #    - Ajusta los parámetros según el tipo
 #    - Asegúrate de que el ejecutable/servicio esté disponible localmente
 #    - Recarga la configuración con POST /reload
-
+#
+# 6. DESCARGAR REDES NEURONALES:
+#    - Ver docs/deployment/FUENTES_MOTORES.md para enlaces de descarga
+#    - Usa el script download_weights.sh para descargar automáticamente
+#    - Coloca los archivos .pb.gz o .onnx en la carpeta weights/

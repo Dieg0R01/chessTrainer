@@ -60,6 +60,10 @@ class NeuronalEngine(MotorBase):
         
         self.validator = SchemaValidator()
     
+    async def _check_availability(self) -> bool:
+        """Verifica disponibilidad delegando en el protocolo"""
+        return await self.protocol.check_availability()
+
     async def _do_initialize(self):
         """Inicializa el protocolo de comunicación"""
         await self.protocol.initialize()

@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 import os
 import logging
+import asyncio
 
 # Configurar logging
 logging.basicConfig(
@@ -37,19 +38,23 @@ def get_cors_origins() -> List[str]:
     # En desarrollo, permitir localhost con diferentes puertos comunes
     is_production = os.getenv("ENVIRONMENT") == "production"
     
-    if not is_production:
-        # Desarrollo: permitir localhost en puertos comunes
-        return [
-            "http://localhost:5173",  # Vite dev server
-            "http://localhost:3000",  # React dev server común
-            "http://localhost:8080",  # Otro puerto común
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:8080",
-        ]
+    # Siempre permitir localhost en desarrollo (incluso si ENVIRONMENT=production en Docker)
+    # Esto permite que el frontend local se conecte al backend en Docker
+    localhost_origins = [
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:3000",  # React dev server común
+        "http://localhost:8080",  # Otro puerto común
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8080",
+    ]
     
-    # Producción: solo orígenes específicos (configurar según tu dominio)
-    return [
+    if not is_production:
+        # Desarrollo: solo localhost
+        return localhost_origins
+    
+    # Producción: localhost + orígenes específicos (para desarrollo local con Docker)
+    return localhost_origins + [
         "https://tudominio.com",
         "https://www.tudominio.com",
     ]
@@ -83,6 +88,8 @@ class EngineInfo(BaseModel):
     origin: str
     validation_mode: str
     initialized: bool
+    available: Optional[bool] = True  # Nuevo campo de disponibilidad
+    description: Optional[str] = ""  # Descripción del motor
 
 
 class CompareRequest(BaseModel):
@@ -138,6 +145,9 @@ async def startup_event():
     """Evento de inicio de la aplicación"""
     logger.info("Iniciando Chess Trainer API v2.0.0")
     logger.info(f"Motores cargados: {len(engine_manager)}")
+    
+    # Verificar disponibilidad en background para no bloquear el arranque
+    asyncio.create_task(engine_manager.check_all_availability())
 
 
 @app.on_event("shutdown")
@@ -322,20 +332,6 @@ async def filter_engines_by_origin(motor_origin: str):
 async def get_best_move(move_request: MoveRequest):
     """
     Obtiene el mejor movimiento de un motor específico.
-    
-    Soporta parámetros adicionales para motores generativos:
-    - move_history: Histórico de movimientos
-    - strategy: Estrategia deseada (balanced, aggressive, defensive, tactical, positional, material, king_safety)
-    - explanation: Solicitar explicación del movimiento
-    
-    Estrategias disponibles:
-    - balanced: Equilibrio entre táctica y posición (por defecto)
-    - aggressive: Juego agresivo, busca ataque y combinaciones
-    - defensive: Juego defensivo, prioriza seguridad
-    - tactical: Enfoque en combinaciones y tácticas
-    - positional: Enfoque en estructura y planes a largo plazo
-    - material: Prioriza ganancia de material
-    - king_safety: Prioriza seguridad del rey
     """
     try:
         # Preparar kwargs para el motor
@@ -424,17 +420,6 @@ async def get_strategies():
 async def compare_engines(compare_request: CompareRequest):
     """
     Compara las sugerencias de todos los motores disponibles para una posición.
-    Útil para análisis y comparación de diferentes enfoques.
-    
-    Devuelve un array de resultados con la estructura:
-    [
-        {
-            "engine": "nombre_motor",
-            "bestmove": "e2e4",
-            "explanation": "explicación opcional"
-        },
-        ...
-    ]
     """
     try:
         # Obtener resultados como diccionario {engine_name: move}
@@ -480,7 +465,6 @@ async def compare_engines(compare_request: CompareRequest):
 async def reload_configuration():
     """
     Recarga la configuración de motores desde el archivo YAML.
-    Útil para añadir o modificar motores sin reiniciar el servidor.
     """
     try:
         # Limpiar motores actuales
@@ -488,6 +472,9 @@ async def reload_configuration():
         
         # Recargar configuración
         engine_manager.reload_config()
+        
+        # Relanzar verificación de disponibilidad en background
+        asyncio.create_task(engine_manager.check_all_availability())
         
         return {
             "status": "success",

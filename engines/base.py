@@ -60,6 +60,7 @@ class MotorBase(ABC):
         self.validation_mode = validation_mode
         self.config = config
         self._initialized = False
+        self._available = None  # Estado de disponibilidad (None=unknown, True=yes, False=no)
         
         logger.info(
             f"Motor creado: {name} | Tipo: {motor_type.value} | "
@@ -94,6 +95,27 @@ class MotorBase(ABC):
         """
         pass
     
+    async def check_availability(self) -> bool:
+        """
+        Verifica si el motor está disponible para su uso.
+        Esta verificación debe ser ligera y rápida.
+        
+        Returns:
+            True si el motor parece disponible, False en caso contrario
+        """
+        # Por defecto, verificamos si la implementación específica define _check_availability
+        if hasattr(self, '_check_availability'):
+            try:
+                self._available = await self._check_availability()
+            except Exception as e:
+                logger.warning(f"Error verificando disponibilidad de {self.name}: {e}")
+                self._available = False
+        else:
+            # Si no hay implementación específica, asumimos disponible si se inicializó correctamente
+            self._available = True
+            
+        return self._available
+
     async def initialize(self) -> None:
         """Inicializa el motor (si requiere setup previo)"""
         if not self._initialized:
@@ -123,7 +145,9 @@ class MotorBase(ABC):
             "type": self.motor_type.value,
             "origin": self.motor_origin.value,
             "validation_mode": self.validation_mode.value,
-            "initialized": self._initialized
+            "initialized": self._initialized,
+            "available": self._available if self._available is not None else True, # Asumir true si no se ha verificado
+            "description": self.config.get("description", "")  # Descripción del motor desde configuración
         }
     
     def __str__(self) -> str:

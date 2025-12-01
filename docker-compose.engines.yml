@@ -1,0 +1,20 @@
+# Docker Compose solo para motores de ajedrez
+# Este contenedor solo proporciona los binarios de los motores
+# El backend y frontend se ejecutan localmente en conda "chess"
+
+services:
+  chess-engines:
+    build:
+      context: .
+      dockerfile: Dockerfile.engines
+    container_name: chess-engines
+    # No exponemos puertos, solo volúmenes
+    volumes:
+      # NO montar /app/bin para no sobrescribir los binarios del contenedor
+      # Los binarios se copiarán al host una vez al iniciar
+      # Montar pesos de redes neuronales
+      - ./weights:/app/weights:rw
+      # Montar configuraciones (solo lectura)
+      - ./config:/app/config:ro
+    restart: unless-stopped
+

@@ -66,8 +66,17 @@ class ProtocolBase(ABC):
         """
         pass
     
+    async def check_availability(self) -> bool:
+        """
+        Verifica si el protocolo puede funcionar con la configuración actual.
+        Debe ser una verificación rápida (existencia de archivos, formato de URL, etc).
+        
+        Returns:
+            True si parece disponible, False en caso contrario
+        """
+        return True
+
     @property
     def is_initialized(self) -> bool:
         """Indica si el protocolo está inicializado"""
         return self._initialized
-

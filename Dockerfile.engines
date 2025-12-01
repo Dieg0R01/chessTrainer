@@ -1,0 +1,82 @@
+# Dockerfile solo para instalar motores de ajedrez
+# Este contenedor solo proporciona los binarios, no el backend
+
+FROM python:3.10-slim AS engines-installer
+
+WORKDIR /app
+
+# Instalar dependencias del sistema para motores
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    curl \
+    unzip \
+    tar \
+    ca-certificates \
+    git \
+    cmake \
+    build-essential \
+    libprotobuf-dev \
+    protobuf-compiler \
+    libopenblas-dev \
+    pkg-config \
+    zlib1g-dev \
+    ninja-build \
+    meson \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear directorios para motores y pesos
+RUN mkdir -p /app/bin /app/weights /app/scripts
+
+# --- INSTALAR STOCKFISH ---
+# Descargar Stockfish desde GitHub releases (versión más reciente)
+# Detectar arquitectura y descargar el binario correcto
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+        echo "Descargando Stockfish para ARM64..." && \
+        (wget --progress=bar:force https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-android-armv8.tar -O /tmp/stockfish.tar || \
+         wget --progress=bar:force https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64.tar -O /tmp/stockfish.tar); \
+    else \
+        echo "Descargando Stockfish para x86-64..." && \
+        (wget --progress=bar:force https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-avx2.tar -O /tmp/stockfish.tar || \
+         wget --progress=bar:force https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64.tar -O /tmp/stockfish.tar); \
+    fi && \
+    tar -xf /tmp/stockfish.tar -C /tmp/ && \
+    find /tmp -name "stockfish*" -type f -executable -exec mv {} /app/bin/stockfish \; && \
+    chmod +x /app/bin/stockfish && \
+    rm -rf /tmp/stockfish* && \
+    test -f /app/bin/stockfish && test -s /app/bin/stockfish || (echo "ERROR: Stockfish no se instaló correctamente" && exit 1)
+
+# --- INSTALAR LC0 (Leela Chess Zero) ---
+# Copiar el script de compilación
+COPY scripts/build_lc0.sh /app/scripts/build_lc0.sh
+RUN chmod +x /app/scripts/build_lc0.sh
+
+# Compilar LC0 durante el build
+RUN /app/scripts/build_lc0.sh
+
+# Verificar que LC0 se compiló correctamente
+RUN test -f /app/bin/lc0 && test -s /app/bin/lc0 || (echo "ERROR: LC0 no se compiló correctamente" && exit 1)
+
+# Añadir /app/bin al PATH
+ENV PATH="/app/bin:${PATH}"
+
+# Etapa final: mantener solo los binarios en una imagen mínima
+FROM python:3.10-slim AS final
+
+WORKDIR /app
+
+# Instalar librerías de runtime necesarias para los motores
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libopenblas0 \
+    libprotobuf32t64 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar solo los binarios y scripts
+COPY --from=engines-installer /app/bin /app/bin
+COPY --from=engines-installer /app/scripts /app/scripts
+
+# Mantener el contenedor corriendo para que los volúmenes estén disponibles
+CMD ["tail", "-f", "/dev/null"]
+

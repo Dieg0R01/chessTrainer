@@ -40,6 +40,40 @@ class LocalLLMProtocol(ProtocolBase):
         
         self.current_fen: Optional[str] = None
     
+    async def check_availability(self) -> bool:
+        """
+        Verifica que el endpoint del LLM local esté disponible.
+        """
+        if not self.endpoint:
+            return False
+            
+        try:
+            async with httpx.AsyncClient(timeout=2.0) as client:
+                # Intentar ping al endpoint
+                # Probar endpoints comunes de health/version
+                endpoints_to_try = ["/health", "/version", "/api/version", "/v1/models"]
+                
+                for path in endpoints_to_try:
+                    try:
+                        await client.get(f"{self.endpoint}{path}")
+                        return True
+                    except httpx.HTTPStatusError:
+                        # Si responde con error HTTP (ej 404), el servidor existe
+                        return True
+                    except Exception:
+                        continue
+                
+                # Si no hay endpoints de health, intentar conexión a raíz
+                try:
+                    await client.head(self.endpoint)
+                    return True
+                except:
+                    pass
+                    
+            return False
+        except Exception:
+            return False
+
     async def initialize(self) -> None:
         """
         Verifica que el endpoint del LLM local esté disponible.
@@ -215,4 +249,3 @@ class LocalLLMProtocol(ProtocolBase):
         """LLM local no requiere limpieza especial"""
         self._initialized = False
         logger.debug("LocalLLMProtocol cleanup completado")
-

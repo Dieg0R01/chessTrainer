@@ -26,7 +26,15 @@ export const getBackendUrl = () => {
   // En producción: usar el mismo hostname pero puerto 8000
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
-  return `${protocol}//${hostname}:8000`;
+  const url = `${protocol}//${hostname}:8000`;
+  
+  // Validar que la URL sea válida
+  if (!url || !url.startsWith('http://') && !url.startsWith('https://')) {
+    console.warn('⚠️ URL del backend inválida, usando fallback localhost:8000');
+    return 'http://localhost:8000';
+  }
+  
+  return url;
 };
 
 /**
@@ -105,7 +113,16 @@ export const fetchEngines = async () => {
 export const fetchBestMove = async (engineName, fen, depth = 10, options = {}) => {
   try {
     const backendUrl = getBackendUrl();
-    const response = await fetch(`${backendUrl}/move`, {
+    
+    // Validar que backendUrl sea válido
+    if (!backendUrl || (!backendUrl.startsWith('http://') && !backendUrl.startsWith('https://'))) {
+      throw new Error(`URL del backend inválida: ${backendUrl}`);
+    }
+    
+    const url = `${backendUrl}/move`;
+    console.log('🔍 Llamando a:', url);
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

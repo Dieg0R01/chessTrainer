@@ -155,9 +155,9 @@ def resolve_env_variables(value: str) -> str:
         var_name = match.group(1)
         default = match.group(2) if match.group(2) else None
         env_value = get_env(var_name, default)
-        # Si no hay valor y no hay default, mantener el original
+        # Si no hay valor y no hay default, devolver cadena vacía para que el protocolo pueda manejarlo
         if env_value is None:
-            return match.group(0)
+            return ""  # Devolver vacío en lugar de mantener ${VARIABLE} sin resolver
         return env_value
     
     result = re.sub(pattern, replace_var, value)

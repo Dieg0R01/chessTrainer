@@ -1,347 +1,241 @@
 #!/bin/bash
+# Script para iniciar Chess Trainer completo
+# Inicia Docker, backend y frontend
 
-# Script para iniciar Chess Trainer
-# Uso: ./start.sh
+set -e
 
 echo "🚀 Iniciando Chess Trainer..."
 echo ""
 
 # Colores para output
 GREEN='\033[0;32m'
-BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Verificar que estamos en el directorio correcto
-if [ ! -f "main.py" ]; then
-    echo "❌ Error: Ejecuta este script desde el directorio raíz del proyecto"
-    exit 1
-fi
-
-# Intentar inicializar conda desde ubicaciones comunes si no está en PATH
-if ! command -v conda &> /dev/null; then
-    # Intentar inicializar conda desde ubicaciones comunes
-    if [ -f "/opt/anaconda3/etc/profile.d/conda.sh" ]; then
-        source "/opt/anaconda3/etc/profile.d/conda.sh"
-    elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
-        source "$HOME/anaconda3/etc/profile.d/conda.sh"
-    elif [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-        source "$HOME/miniconda3/etc/profile.d/conda.sh"
-    elif [ -f "$(dirname $(which python 2>/dev/null || echo ""))/../etc/profile.d/conda.sh" ]; then
-        source "$(dirname $(which python 2>/dev/null || echo ""))/../etc/profile.d/conda.sh"
-    fi
-fi
-
-# Inicializar conda completamente antes de usar comandos conda
-# Primero intentar desde ubicaciones conocidas
-CONDA_BASE=""
-if [ -d "/opt/anaconda3" ]; then
-    CONDA_BASE="/opt/anaconda3"
-elif [ -d "$HOME/anaconda3" ]; then
-    CONDA_BASE="$HOME/anaconda3"
-elif [ -d "$HOME/miniconda3" ]; then
-    CONDA_BASE="$HOME/miniconda3"
-else
-    # Intentar obtener desde conda si ya está en PATH
-    if command -v conda &> /dev/null; then
-        CONDA_BASE=$(conda info --base 2>/dev/null)
-    fi
-fi
-
-# Si encontramos CONDA_BASE, inicializar conda
-if [ -n "$CONDA_BASE" ] && [ -f "$CONDA_BASE/etc/profile.d/conda.sh" ]; then
-    source "$CONDA_BASE/etc/profile.d/conda.sh"
-elif command -v conda &> /dev/null; then
-    # Si conda ya está disponible, intentar obtener base y cargar
-    CONDA_BASE=$(conda info --base 2>/dev/null)
-    if [ -n "$CONDA_BASE" ] && [ -f "$CONDA_BASE/etc/profile.d/conda.sh" ]; then
-        source "$CONDA_BASE/etc/profile.d/conda.sh"
-    fi
-fi
-
-# Verificar que conda está disponible después de intentar inicializar
-if ! command -v conda &> /dev/null; then
-    echo "❌ Error: Conda no está instalado o no está en el PATH"
-    echo "   Intenta inicializar conda manualmente:"
-    echo "   source /opt/anaconda3/etc/profile.d/conda.sh"
-    exit 1
-fi
-
-# Verificar que conda está funcionando correctamente
-if ! conda info --base &> /dev/null; then
-    echo "❌ Error: Conda no está funcionando correctamente después de inicializar"
-    exit 1
-fi
-
-# Verificar que el entorno chess existe
-if ! conda env list | grep -q "^chess "; then
-    echo "❌ Error: El entorno conda 'chess' no existe"
-    echo "   Crea el entorno con: conda create -n chess python=3.9"
-    exit 1
-fi
-
-# Activar entorno usando conda activate (ahora que conda está inicializado)
-conda activate chess
-if [ $? -ne 0 ]; then
-    echo "❌ Error: No se pudo activar el entorno conda 'chess'"
-    echo "   Verifica que el entorno existe: conda env list"
-    exit 1
-fi
-
-# Verificar e instalar dependencias si faltan
-echo "🔍 Verificando dependencias..."
-
-# Verificar dependencias críticas y instalar si faltan
-CHECK_DEPS=$(python -c "
-import sys
-missing = []
-try:
-    import uvicorn
-except ImportError:
-    missing.append('uvicorn[standard]')
-try:
-    import fastapi
-except ImportError:
-    missing.append('fastapi')
-try:
-    import chess
-except ImportError:
-    missing.append('python-chess')
-try:
-    import yaml
-except ImportError:
-    missing.append('PyYAML')
-try:
-    import httpx
-except ImportError:
-    missing.append('httpx')
-try:
-    import jsonpath
-except ImportError:
-    missing.append('jsonpath')
-
-if missing:
-    print(' '.join(missing))
-    sys.exit(1)
-else:
-    print('OK')
-" 2>&1)
-
-if [ $? -ne 0 ]; then
-    echo "⚠️  Instalando dependencias faltantes..."
-    echo "$CHECK_DEPS" | grep -v "^OK$" | while read -r dep; do
-        if [ -n "$dep" ] && [ "$dep" != "OK" ]; then
-            echo "   Instalando: $dep"
-            pip install -q "$dep" 2>&1 | grep -v "already satisfied" || true
-        fi
-    done
-    
-    # También instalar desde requirements.txt para asegurar versiones correctas
-    if [ -f "requirements.txt" ]; then
-        echo "   Instalando desde requirements.txt..."
-        pip install -q -r requirements.txt 2>&1 | grep -v "already satisfied" || true
-    fi
-    
-    echo "✅ Dependencias verificadas/instaladas"
-    echo ""
-fi
-
-# Función para manejar Ctrl+C
-cleanup() {
-    echo ""
-    echo "🛑 Deteniendo servidores..."
-    pkill -f "uvicorn main:app"
-    pkill -f "vite"
-    
-    # Limpiar script temporal si existe
-    if [ -f .backend_script.path ]; then
-        BACKEND_SCRIPT_PATH=$(cat .backend_script.path)
-        rm -f "$BACKEND_SCRIPT_PATH" .backend_script.path .backend.pid 2>/dev/null || true
-    fi
-    
-    echo "✅ Servidores detenidos"
-    exit 0
-}
-
-trap cleanup SIGINT SIGTERM
-
-# Obtener IP local para mostrar en la salida
-LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -1)
-
-# Iniciar backend en segundo plano
-echo -e "${BLUE}📦 Iniciando Backend (FastAPI)...${NC}"
-
-# Asegurar que estamos en el entorno correcto (conda ya está inicializado arriba)
-conda activate chess
-
-# Verificar que podemos importar los módulos antes de iniciar
-echo "🔍 Verificando importaciones del backend..."
-IMPORT_CHECK=$(python -c "
-try:
-    import main
-    print('OK')
-except Exception as e:
-    print(f'ERROR: {e}')
-    import sys
-    sys.exit(1)
-" 2>&1)
-
-if [ $? -ne 0 ]; then
-    echo "❌ Error al importar módulos del backend:"
-    echo "$IMPORT_CHECK"
-    echo ""
-    echo "💡 Intentando instalar todas las dependencias desde requirements.txt..."
-    pip install -q -r requirements.txt
-    echo ""
-    echo "🔍 Verificando nuevamente..."
-    if ! python -c "import main" 2>/dev/null; then
-        echo "❌ Error: No se pueden importar los módulos del backend después de instalar dependencias"
-        echo "   Revisa los logs anteriores para más detalles"
+# Función para verificar si Docker está corriendo
+check_docker() {
+    # Verificar si Docker está disponible
+    if ! command -v docker &> /dev/null; then
+        echo -e "${RED}❌ Docker no está instalado${NC}"
         exit 1
     fi
-    echo "✅ Módulos importados correctamente después de instalar dependencias"
-else
-    echo "✅ Módulos del backend verificados correctamente"
-fi
-echo ""
-
-# Limpiar procesos anteriores si existen
-pkill -f "uvicorn main:app" 2>/dev/null || true
-sleep 1
-
-# Obtener ruta absoluta del proyecto
-PROJECT_DIR=$(pwd)
-
-# Limpiar scripts temporales anteriores
-rm -f /tmp/chess_trainer_backend_*.sh 2>/dev/null || true
-
-# Crear script temporal para iniciar backend con entorno conda
-# Usar timestamp y PID para asegurar unicidad
-TIMESTAMP=$(date +%s)
-BACKEND_SCRIPT="/tmp/chess_trainer_backend_${TIMESTAMP}_$$.sh"
-
-cat > "$BACKEND_SCRIPT" << EOF
-#!/bin/bash
-source "\$(conda info --base)/etc/profile.d/conda.sh"
-conda activate chess
-cd "$PROJECT_DIR"
-exec uvicorn main:app --reload --host 0.0.0.0 --port 8000
-EOF
-
-# Verificar que el archivo se creó correctamente
-if [ ! -f "$BACKEND_SCRIPT" ]; then
-    echo "❌ Error: No se pudo crear el script temporal del backend"
-    exit 1
-fi
-
-chmod +x "$BACKEND_SCRIPT"
-
-# Iniciar backend en segundo plano con el script (usando nohup para independencia)
-nohup "$BACKEND_SCRIPT" > logs_backend.log 2>&1 &
-BACKEND_PID=$!
-disown $BACKEND_PID 2>/dev/null || true
-
-# Guardar el PID del script también para limpieza
-echo "$BACKEND_PID" > .backend.pid
-echo "$BACKEND_SCRIPT" > .backend_script.path
-echo "   Backend PID: $BACKEND_PID"
-echo "   URL Local: http://localhost:8000"
-if [ -n "$LOCAL_IP" ]; then
-    echo "   URL Red: http://$LOCAL_IP:8000"
-fi
-echo ""
-
-# Esperar un poco para que el backend inicie
-sleep 2
-
-# Iniciar frontend en segundo plano (usando nohup para independencia)
-echo -e "${BLUE}🎨 Iniciando Frontend (Vite)...${NC}"
-cd frontend
-# Iniciar npm en segundo plano con nohup y redirección
-nohup npm run dev -- --host > ../logs_frontend.log 2>&1 &
-FRONTEND_PID=$!
-# Esperar un momento para que el proceso inicie
-sleep 2
-# Obtener el PID real del proceso vite (puede ser el proceso hijo)
-VITE_PID=$(pgrep -f "vite.*--host" | head -1)
-if [ -n "$VITE_PID" ]; then
-    FRONTEND_PID=$VITE_PID
-fi
-# Desvincular el proceso del shell actual
-disown $FRONTEND_PID 2>/dev/null || true
-cd ..
-echo "   Frontend PID: $FRONTEND_PID"
-echo "   URL Local: http://localhost:5173"
-if [ -n "$LOCAL_IP" ]; then
-    echo "   URL Red: http://$LOCAL_IP:5173"
-fi
-echo ""
-
-# Esperar un poco para verificar que iniciaron correctamente
-sleep 3
-
-# Verificar que los procesos estén corriendo
-echo "🔍 Verificando procesos..."
-sleep 2  # Dar tiempo para que los procesos inicien
-
-if ! ps -p $BACKEND_PID > /dev/null 2>&1; then
-    echo "❌ Error: El backend no pudo iniciar."
-    echo "📝 Últimas líneas del log del backend:"
-    tail -20 logs_backend.log 2>/dev/null | head -20 || echo "   (no hay logs disponibles)"
-    echo ""
-    echo "💡 Intenta ejecutar manualmente: bash start_backend.sh"
-    exit 1
-fi
-
-if ! ps -p $FRONTEND_PID > /dev/null 2>&1; then
-    echo "❌ Error: El frontend no pudo iniciar."
-    echo "📝 Últimas líneas del log del frontend:"
-    tail -20 logs_frontend.log 2>/dev/null | head -20 || echo "   (no hay logs disponibles)"
-    pkill -f "uvicorn main:app" 2>/dev/null || true
-    exit 1
-fi
-
-# Verificar que el backend esté respondiendo
-echo "🔍 Verificando que el backend responda..."
-BACKEND_RESPONDING=false
-for i in {1..10}; do
-    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-        BACKEND_RESPONDING=true
-        echo "✅ Backend respondiendo correctamente"
-        break
+    
+    # Limpiar DOCKER_HOST si está configurado incorrectamente
+    if [ -n "$DOCKER_HOST" ] && [ "$DOCKER_HOST" != "unix://$HOME/.docker/run/docker.sock" ]; then
+        unset DOCKER_HOST
     fi
-    sleep 1
-done
+    
+    # Intentar usar el contexto de Docker Desktop si está disponible
+    if docker context ls 2>/dev/null | grep -q "desktop-linux"; then
+        docker context use desktop-linux > /dev/null 2>&1 || true
+    fi
+    
+    # Intentar conectar a Docker
+    if ! docker info > /dev/null 2>&1; then
+        echo -e "${RED}❌ Docker no está corriendo o no se puede conectar${NC}"
+        echo "💡 Por favor, inicia Docker Desktop y vuelve a intentar"
+        echo "   Verifica que Docker Desktop esté completamente iniciado"
+        exit 1
+    fi
+    echo -e "${GREEN}✅ Docker está corriendo${NC}"
+}
 
-if [ "$BACKEND_RESPONDING" = false ]; then
-    echo "⚠️  Advertencia: El backend no responde aún (puede tardar unos segundos más)"
-    echo "   El proceso está corriendo (PID: $BACKEND_PID)"
-    echo "   Revisa los logs: tail -f logs_backend.log"
-fi
-echo ""
-
-echo -e "${GREEN}✅ Chess Trainer está corriendo!${NC}"
-echo ""
-echo "📋 Información:"
-if [ -n "$LOCAL_IP" ]; then
-    echo "   🌐 Acceso desde tu red local:"
-    echo "      - Frontend: http://$LOCAL_IP:5173"
-    echo "      - Backend:  http://$LOCAL_IP:8000"
+# Función para levantar contenedor Docker (solo motores)
+start_docker_engines() {
     echo ""
-fi
-echo "   💻 Acceso local:"
-echo "      - Frontend: http://localhost:5173"
-echo "      - Backend:  http://localhost:8000"
-echo ""
-echo "   📝 Logs:"
-echo "      - Backend:  tail -f logs_backend.log"
-echo "      - Frontend: tail -f logs_frontend.log"
-echo ""
-echo "Para detener la aplicación:"
-echo "   - Presiona Ctrl+C en esta terminal"
-echo "   - O ejecuta: ./stop.sh"
-echo ""
+    echo -e "${YELLOW}🐳 Levantando contenedor Docker para motores...${NC}"
+    
+    # Crear directorio para binarios si no existe
+    mkdir -p ./engines-bin
+    
+    # Verificar si el contenedor chess-trainer ya está corriendo
+    if docker ps --format '{{.Names}}' | grep -q "^chess-trainer$"; then
+        echo -e "${GREEN}✅ Contenedor chess-trainer ya está corriendo${NC}"
+    else
+        # Verificar si existe pero está detenido
+        if docker ps -a --format '{{.Names}}' | grep -q "^chess-trainer$"; then
+            echo "🔄 Iniciando contenedor existente..."
+            docker start chess-trainer
+        else
+            echo "🏗️  Construyendo e iniciando contenedor de motores..."
+            docker-compose up -d --build
+        fi
+        
+        # Esperar un momento para que el contenedor esté listo
+        echo "⏳ Esperando a que el contenedor esté listo..."
+        sleep 5
+    fi
+    
+    # Preparar scripts y binarios dentro del contenedor
+    echo "📦 Preparando scripts de compilación..."
+    docker cp scripts/build_lc0.sh chess-trainer:/app/scripts/build_lc0.sh 2>/dev/null || true
+    docker exec chess-trainer chmod +x /app/scripts/build_lc0.sh 2>/dev/null || true
+    
+    # Verificar y mover Lc0 si está en /app/bin/bin/lc0 (como el usuario mencionó)
+    echo "🔍 Verificando binarios de motores..."
+    docker exec chess-trainer sh -c "if [ -f /app/bin/bin/lc0 ]; then mv /app/bin/bin/lc0 /app/bin/lc0 && chmod +x /app/bin/lc0 && echo '✅ Binario movido'; fi" 2>/dev/null || true
+    
+    # Verificar que los motores estén disponibles en el contenedor
+    echo "✅ Contenedor Docker listo para motores"
+    docker exec chess-trainer ls -la /app/bin/ 2>/dev/null | head -5 || true
+}
 
-# Mantener el script corriendo
-wait
+# Función para activar conda
+activate_conda() {
+    if command -v conda &> /dev/null; then
+        if conda env list | grep -q "^chess "; then
+            echo "🐍 Activando entorno conda 'chess'..."
+            source "$(conda info --base)/etc/profile.d/conda.sh"
+            conda activate chess
+            echo -e "${GREEN}✅ Entorno conda 'chess' activado${NC}"
+            return 0
+        else
+            echo -e "${RED}❌ Entorno conda 'chess' no encontrado${NC}"
+            echo "💡 Crea el entorno con: conda create -n chess python=3.10"
+            return 1
+        fi
+    else
+        echo -e "${RED}❌ Conda no está instalado${NC}"
+        return 1
+    fi
+}
 
+# Función para iniciar backend local en conda
+start_backend_local() {
+    echo ""
+    echo -e "${YELLOW}🔧 Iniciando backend local (conda 'chess')...${NC}"
+    
+    # Activar conda
+    if ! activate_conda; then
+        exit 1
+    fi
+    
+    # Añadir engines-bin al PATH
+    export PATH="$(pwd)/engines-bin:${PATH}"
+    
+    # Verificar si el puerto 8000 está libre
+    if lsof -ti:8000 > /dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️  Puerto 8000 ya está en uso${NC}"
+        echo "💡 El backend puede estar ya corriendo"
+    else
+        echo "🚀 Iniciando backend en segundo plano..."
+        # Ejecutar en conda activado
+        bash -c "source \"$(conda info --base)/etc/profile.d/conda.sh\" && conda activate chess && cd $(pwd) && export PATH=\"$(pwd)/engines-bin:\$PATH\" && python main.py > /tmp/chess_trainer_backend.log 2>&1" &
+        BACKEND_PID=$!
+        echo "📝 Backend iniciado (PID: $BACKEND_PID)"
+        echo "📝 Logs: tail -f /tmp/chess_trainer_backend.log"
+        
+        # Esperar a que el backend responda
+        echo "⏳ Esperando a que el backend esté listo..."
+        sleep 3
+        for i in {1..10}; do
+            if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+                echo -e "${GREEN}✅ Backend listo${NC}"
+                break
+            fi
+            sleep 1
+        done
+    fi
+}
 
+# Función para iniciar frontend en conda
+start_frontend() {
+    echo ""
+    echo -e "${YELLOW}🎨 Iniciando frontend (conda 'chess')...${NC}"
+    
+    # Activar conda (aunque npm no lo necesite, el usuario quiere que esté en conda)
+    if ! activate_conda; then
+        exit 1
+    fi
+    
+    cd frontend
+    
+    # Verificar si node_modules existe
+    if [ ! -d "node_modules" ]; then
+        echo "📦 Instalando dependencias del frontend..."
+        npm install
+    fi
+    
+    # Verificar si el puerto 5173 está libre
+    if lsof -ti:5173 > /dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️  Puerto 5173 ya está en uso${NC}"
+        echo "💡 Frontend puede estar ya corriendo"
+        if curl -s http://localhost:5173 > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Frontend ya está accesible${NC}"
+        fi
+    else
+        echo "🚀 Iniciando frontend en segundo plano..."
+        # Usar el script wrapper para asegurar que persista
+        nohup bash ./start_vite.sh > /tmp/chess_trainer_frontend.log 2>&1 &
+        FRONTEND_PID=$!
+        echo "📝 Frontend iniciado (PID: $FRONTEND_PID)"
+        echo "📝 Logs: tail -f /tmp/chess_trainer_frontend.log"
+        
+        # Esperar a que Vite esté listo
+        echo "⏳ Esperando a que el frontend esté listo..."
+        for i in {1..20}; do
+            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+                echo -e "${GREEN}✅ Frontend listo${NC}"
+                break
+            fi
+            sleep 1
+            if [ $((i % 3)) -eq 0 ]; then
+                echo -n "."
+            fi
+        done
+        echo ""
+        
+        # Verificar que el proceso sigue corriendo
+        if ! ps -p $FRONTEND_PID > /dev/null 2>&1; then
+            echo -e "${RED}⚠️  El proceso del frontend se detuvo. Revisa los logs:${NC}"
+            echo "   tail -20 /tmp/chess_trainer_frontend.log"
+        fi
+    fi
+    
+    cd ..
+}
+
+# Función principal
+main() {
+    # Verificar Docker
+    check_docker
+    
+    # Activar conda primero
+    if ! activate_conda; then
+        exit 1
+    fi
+    
+    # Levantar Docker solo para motores
+    start_docker_engines
+    
+    # Iniciar backend local en conda
+    start_backend_local
+    
+    # Iniciar frontend en conda
+    start_frontend
+    
+    # Resumen
+    echo ""
+    echo -e "${GREEN}═══════════════════════════════════════${NC}"
+    echo -e "${GREEN}✅ Chess Trainer iniciado${NC}"
+    echo -e "${GREEN}═══════════════════════════════════════${NC}"
+    echo ""
+    echo "📊 Servicios:"
+    echo "  🐳 Docker: Contenedor 'chess-engines' (solo motores)"
+    echo "  🔧 Backend local (conda): http://localhost:8000"
+    echo "  🎨 Frontend (conda): http://localhost:5173"
+    echo ""
+    echo "📁 Motores disponibles en: $(pwd)/engines-bin"
+    echo ""
+    echo "📝 Logs:"
+    echo "  Backend: tail -f /tmp/chess_trainer_backend.log"
+    echo "  Frontend: tail -f /tmp/chess_trainer_frontend.log"
+    echo "  Docker engines: docker logs -f chess-engines"
+    echo ""
+    echo "🛑 Para detener: ./stop.sh"
+    echo ""
+}
+
+# Ejecutar función principal
+main

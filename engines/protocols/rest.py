@@ -54,6 +54,42 @@ class RESTProtocol(ProtocolBase):
         
         self.current_fen: Optional[str] = None
     
+    async def check_availability(self) -> bool:
+        """
+        Verifica la disponibilidad del servicio REST.
+        Para servicios locales (localhost), intenta hacer una conexión rápida.
+        Para servicios remotos, solo valida la configuración para evitar costes/latencia.
+        """
+        if not self.url:
+            return False
+            
+        # Validación básica de URL
+        if not (self.url.startswith("http://") or self.url.startswith("https://")):
+            return False
+            
+        # Si es localhost, intentar un ping rápido
+        if "localhost" in self.url or "127.0.0.1" in self.url:
+            try:
+                # Solo verificar si el puerto está abierto/responde
+                # Usar un timeout muy corto para no bloquear
+                async with httpx.AsyncClient(timeout=1.0) as client:
+                    # Intentar un GET a la raíz o health si es posible, sino solo conexión
+                    try:
+                        await client.head(self.url)
+                    except httpx.HTTPStatusError:
+                        # Si responde con error HTTP (ej: 404, 405), el servidor existe
+                        pass
+                return True
+            except Exception:
+                return False
+        
+        # Para servicios remotos, asumimos disponible si la config es válida
+        # Validar API key si parece necesaria (no placeholder)
+        if self.config.get("api_key_required", False) and not self.api_key:
+            return False
+            
+        return True
+
     async def initialize(self) -> None:
         """REST no requiere inicialización especial"""
         self._initialized = True
@@ -235,4 +271,3 @@ class RESTProtocol(ProtocolBase):
         """REST no requiere limpieza de recursos"""
         self._initialized = False
         logger.debug("RESTProtocol cleanup completado")
-

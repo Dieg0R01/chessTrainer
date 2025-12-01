@@ -276,10 +276,11 @@ function ComparePage() {
       return [];
     }
 
-    // Procesar resultados: identificar errores
+    // Procesar resultados: identificar errores y disponibilidad
     const processedResults = resultsArray.map(result => ({
       ...result,
-      isError: result.bestmove && result.bestmove.toString().startsWith('ERROR:')
+      isError: result.bestmove && result.bestmove.toString().startsWith('ERROR:'),
+      isUnavailable: result.bestmove === 'NO DISPONIBLE'
     }));
 
     // Aplicar filtro si existe
@@ -365,7 +366,6 @@ function ComparePage() {
                   boardWidth={600}
                 />
               </div>
-              <div className="board-label glow">COMPARE.SYS v2.0</div>
             </div>
           </div>
 
@@ -502,7 +502,10 @@ function ComparePage() {
                               borderBottom: '1px solid rgba(36, 163, 42, 0.3)',
                               backgroundColor: result.isError
                                 ? 'rgba(255, 0, 0, 0.1)'
-                                : 'transparent'
+                                : result.isUnavailable
+                                  ? 'rgba(128, 128, 128, 0.1)'
+                                  : 'transparent',
+                              opacity: result.isUnavailable ? 0.6 : 1
                             }}
                           >
                             <td style={{
@@ -514,7 +517,7 @@ function ComparePage() {
                             </td>
                             <td style={{
                               padding: '10px',
-                              color: result.isError ? '#ff4444' : '#fff',
+                              color: result.isError ? '#ff4444' : result.isUnavailable ? '#aaa' : '#fff',
                               verticalAlign: 'top'
                             }}>
                               {result.bestmove || 'N/A'}
@@ -532,6 +535,10 @@ function ComparePage() {
                               ) : result.isError ? (
                                 <span style={{ color: '#ff6666' }}>
                                   Falló al analizar la posición.
+                                </span>
+                              ) : result.isUnavailable ? (
+                                <span style={{ color: '#aaa', fontStyle: 'italic' }}>
+                                  Motor no disponible o mal configurado.
                                 </span>
                               ) : (
                                 'Análisis completado (sin explicación textual).'

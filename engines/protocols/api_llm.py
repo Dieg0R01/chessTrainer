@@ -45,14 +45,28 @@ class APILLMProtocol(ProtocolBase):
         
         # api_url ya debería estar resuelto desde variables de entorno si estaba como ${VARIABLE}
         # Si aún no está, intentar obtenerlo desde variables de entorno directamente
-        if not self.api_url:
+        if not self.api_url or self.api_url == "":
             self.api_url = get_api_url(self.provider, engine_name)
+            logger.debug(f"api_url obtenida de variables de entorno: {self.api_url}")
         
+        # Validar que api_url tenga protocolo
+        if self.api_url:
+            # Limpiar espacios en blanco
+            self.api_url = self.api_url.strip()
+            if not (self.api_url.startswith('http://') or self.api_url.startswith('https://')):
+                logger.warning(f"api_url inválida (sin protocolo): '{self.api_url}'. El motor aparecerá como no disponible.")
+                self.api_url = None
+        
+        # NO lanzar excepción si api_url está vacía, permitir que el motor se cree pero aparezca como no disponible
+        # Esto permite que los motores aparezcan en la lista aunque no estén configurados
         if not self.api_url:
-            raise ValueError(
-                f"APILLMProtocol requiere 'api_url' en configuración (puede usar ${{OPENAI_API_URL}}) "
-                f"o variable de entorno ({self.provider.upper()}_API_URL)"
+            logger.warning(
+                f"APILLMProtocol para {engine_name} sin api_url configurada. "
+                f"El motor aparecerá como no disponible. "
+                f"Configura {self.provider.upper()}_API_URL o usa ${{OPENAI_API_URL}} en el YAML."
             )
+        
+        logger.debug(f"APILLMProtocol configurado con api_url: {self.api_url[:50]}...")
         
         # api_key ya debería estar resuelto desde variables de entorno si estaba como ${VARIABLE}
         # Si aún no está, intentar obtenerlo desde variables de entorno directamente
@@ -77,6 +91,20 @@ class APILLMProtocol(ProtocolBase):
         
         self.current_fen: Optional[str] = None
     
+    async def check_availability(self) -> bool:
+        """
+        Verifica la disponibilidad de la API.
+        Solo verifica configuración para evitar costes.
+        """
+        if not self.provider or not self.model or not self.api_url:
+            return False
+            
+        # Validar API key (no debe ser vacía ni placeholder por defecto)
+        if not self.api_key or self.api_key.startswith("YOUR_"):
+            return False
+            
+        return True
+
     async def initialize(self) -> None:
         """API LLM no requiere inicialización especial"""
         self._initialized = True
@@ -327,4 +355,3 @@ class APILLMProtocol(ProtocolBase):
         """API LLM no requiere limpieza"""
         self._initialized = False
         logger.debug(f"APILLMProtocol cleanup completado ({self.provider})")
-

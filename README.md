@@ -7,9 +7,21 @@ Sistema completo de entrenamiento de ajedrez con backend FastAPI y frontend Reac
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](docs/changelog/CAMBIOS_v2.0.0.md)
+[![Version](https://img.shields.io/badge/version-3.0.0-brightgreen.svg)](docs/changelog/CAMBIOS_v3.0.0.md)
 
 ![Vista de la interfaz](docs/images/interface_view.png)
+
+## 🎉 Nuevo en v3.0.0
+
+**Mejoras de UX, responsividad y sistema de disponibilidad**:
+- 🎨 **UI simplificada y responsiva** (tablero adaptable, casillas de 75px, sin scrollbars innecesarios)
+- 🖱️ **Interacción unificada** (click + drag & drop mejorados, resaltados consistentes)
+- ✅ **Sistema de disponibilidad de motores** (verificación automática de binarios y configuración)
+- 📊 **Herramientas de análisis** (página de comparación mejorada con detección de motores no disponibles)
+- 🐳 **Soporte Docker** (motores incluidos, configuración lista para producción)
+- 🔍 **Filtrado inteligente** (solo muestra motores realmente disponibles)
+
+👉 **[Ver cambios completos](docs/changelog/CAMBIOS_v3.0.0.md)** | **[Docker Setup](docs/deployment/DOCKER_SETUP.md)** | **[Fuentes de Motores](docs/deployment/FUENTES_MOTORES.md)**
 
 ## 🎉 Nuevo en v2.0.0
 
@@ -217,7 +229,7 @@ chessTrainer/
 │   ├── validators.py    # Validadores (Schema y Prompt)
 │   ├── traditional.py   # Motores tradicionales
 │   ├── neuronal.py      # Motores neuronales
-│   ├── generative.py    # Motores generativos (LLM)
+│   ├── generative.py   # Motores generativos (LLM)
 │   └── factory.py       # Factory y Registry
 ├── frontend/            # Aplicación React
 │   ├── src/

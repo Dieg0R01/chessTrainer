@@ -85,10 +85,6 @@ img.chess-logo,
     height: auto;
   }
   
-  .panel-content {
-    max-height: 300px;
-    overflow-y: auto;
-  }
 }
 
 /* Panels */
@@ -108,11 +104,9 @@ img.chess-logo,
 
 .panel-content {
   padding: 10px;
-  max-height: 250px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow-y: auto;
 }
 
 .status-line {
@@ -688,12 +682,12 @@ input.retro-select:hover {
 
 .history-content {
   flex: 1;
-  overflow-y: auto;
   border: 1px solid var(--retro-green);
   padding: 15px;
   background: var(--retro-bg);
   font-size: 24px !important;
   min-height: 90px;
+  height: auto;
 }
 
 .history-item {
@@ -757,7 +751,6 @@ input.retro-select:hover {
   
   .panel-content {
     padding: 8px;
-    max-height: 200px;
   }
   
   /* Tablero en modo juego - más pequeño pero manteniendo proporción */

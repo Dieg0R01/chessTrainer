@@ -4,6 +4,7 @@ Utiliza el sistema de Factory y Registry para gestionar múltiples motores.
 """
 
 import logging
+import asyncio
 from typing import Dict, Optional, List
 from engines import MotorBase, EngineFactory, EngineClassifier, MotorType, MotorOrigin
 
@@ -72,18 +73,47 @@ class EngineManager:
             logger.error(f"Error cargando configuración desde {paths_to_load}: {e}")
             raise
     
+    async def check_all_availability(self) -> None:
+        """
+        Verifica la disponibilidad de todos los motores.
+        Actualiza el estado interno 'available' de cada motor.
+        """
+        logger.info("Verificando disponibilidad de motores...")
+        tasks = []
+        for engine in self.engines.values():
+            tasks.append(engine.check_availability())
+        
+        if tasks:
+            await asyncio.gather(*tasks)
+            
+        # Log resumen
+        available_count = sum(1 for e in self.engines.values() if e._available)
+        logger.info(f"Verificación completada: {available_count}/{len(self.engines)} motores disponibles")
+
     def reload_config(self) -> None:
         """Recarga la configuración desde los archivos"""
         # Limpiar motores existentes
         for engine in self.engines.values():
             try:
                 import asyncio
-                asyncio.create_task(engine.cleanup())
+                # Usar loop actual si existe, o crear tarea background
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(engine.cleanup())
+                except RuntimeError:
+                    pass # No hay loop corriendo
             except Exception as e:
                 logger.warning(f"Error limpiando motor al recargar: {e}")
         
         self.engines.clear()
         self.load_config()
+        
+        # Intentar lanzar verificación si hay loop
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self.check_all_availability())
+        except RuntimeError:
+            pass # Se verificará bajo demanda o al arranque de la app
     
     def get_engine(self, name: str) -> MotorBase:
         """
@@ -173,6 +203,10 @@ class EngineManager:
         """
         engine = self.get_engine(engine_name)
         
+        # Verificar disponibilidad antes de intentar
+        if engine._available is False:
+             raise ValueError(f"El motor {engine_name} no está disponible (verifique configuración o conexión)")
+        
         try:
             move = await engine.get_move(fen, depth, **kwargs)
             logger.info(f"Movimiento obtenido de {engine_name}: {move}")
@@ -194,7 +228,15 @@ class EngineManager:
         """
         results = {}
         
+        # Ejecutar check rápido si no se ha hecho
+        # await self.check_all_availability() # Opcional, puede ser lento
+        
         for name, engine in self.engines.items():
+            # Saltar motores no disponibles
+            if engine._available is False:
+                results[name] = "NO DISPONIBLE"
+                continue
+                
             try:
                 # Para motores generativos, solicitar explicación automáticamente
                 # Verificar si el motor soporta explicaciones

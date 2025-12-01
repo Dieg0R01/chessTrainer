@@ -1,0 +1,30 @@
+services:
+  chess-trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chess-trainer
+    ports:
+      - "8001:8000"  # Puerto 8001 en host, 8000 en contenedor (para evitar conflicto con backend local)
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+      # Variables de entorno para APIs externas (si las usas)
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      # Montar configuraciones para poder editarlas sin reconstruir
+      - ./config:/app/config:ro
+      # Montar carpeta de pesos para redes neuronales (si las descargas después)
+      - ./weights:/app/weights:rw
+      # Montar logs si quieres persistirlos
+      - ./logs:/app/logs:rw
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
