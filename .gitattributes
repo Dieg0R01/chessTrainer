@@ -1,2 +1,4 @@
+# Archivos grandes que usarán Git LFS
 engines-bin/stockfish filter=lfs diff=lfs merge=lfs -text
 weights/*.pb.gz filter=lfs diff=lfs merge=lfs -text
+
