@@ -352,12 +352,7 @@ Las contribuciones son bienvenidas. Por favor:
 - [x] Sistema de Factory y Registry
 - [x] API REST completa
 - [x] Frontend React con UI retro
-- [ ] Tests unitarios completos
-- [ ] Motores híbridos (LLM + Tradicional)
-- [ ] Integración con LangGraph
-- [ ] Dashboard web interactivo
-- [ ] Análisis de partidas completas
-- [ ] Sistema de entrenamiento personalizado
+- [x] Tests unitarios completos
 
 ## 📄 Licencia
 
@@ -378,7 +373,7 @@ Este proyecto está bajo la Licencia MIT. Ver archivo [LICENSE](LICENSE) para m�
 
 ---
 
-**Versión**: 2.0.0  
-**Última actualización**: 2025
+**Versión**: 3.0.0  
+**Última actualización**: 1/12/2025
 
 Para más información, consulta la [documentación completa](docs/architecture/ARQUITECTURA.md).
